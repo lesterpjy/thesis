@@ -49,6 +49,31 @@ step $t$ within the operative posterior rather than from a fresh prior estimate.
 \chapter{Linearised EIG and the escape threshold}
 \label{app:lindley}
 
+\section{The linearised information gain equals $\Lambda$}
+The main text calls $\Lambda$ the Gaussian-linearised information gain; we justify the
+name. For a Gaussian prior $p(\theta)=\mathcal N(\mu_0,\Sigma_0)$ and a linear-Gaussian
+observation $y=\mu_0+J(\theta-\theta_0)+\varepsilon$ with $\varepsilon\sim\mathcal N(0,R)$,
+the posterior is Gaussian with covariance $\Sigma_{\mathrm{post}}=(\Sigma_0^{-1}+F)^{-1}$,
+$F=J^\top R^{-1}J$, which does not depend on the realised $y$. The information gain is the
+drop in differential entropy,
+\begin{align}
+\mathrm{EIG}(\xi)
+&= H[p(\theta)]-\mathbb{E}_y\,H[p(\theta\mid y,\xi)]
+= \tfrac12\log\!\big((2\pi e)^d\det\Sigma_0\big)-\tfrac12\log\!\big((2\pi e)^d\det\Sigma_{\mathrm{post}}\big)\nonumber\\
+&= \tfrac12\log\frac{\det\Sigma_0}{\det\Sigma_{\mathrm{post}}}
+= \tfrac12\log\det\!\big(\Sigma_0(\Sigma_0^{-1}+F)\big)
+= \tfrac12\log\det(I+\Sigma_0 F)
+= \tfrac12\sum_i\log(1+\lambda_i)=\Lambda. \label{eq:eig-lambda}
+\end{align}
+So $\Lambda$ is exactly the EIG of the linearised experiment (equivalently the Bayesian
+D-optimal value). For nonlinear models the same expression is the leading term of the
+entropy-based EIG under a Gauss--Newton (Laplace) approximation, with $\Sigma_{\mathrm{post}}$
+evaluated at the posterior mode. Combined with the escape result below, this gives the
+headline relation $L_{\mathrm{escape}}\sim e^{\Lambda}=e^{\mathrm{EIG}}$: the contrastive
+budget needed to escape saturation grows as the exponential of the experiment's
+information.
+
+\section{The expected importance weight and the escape threshold}
 We derive in full the scaling $\mathbb{E}[r_\ell]\sim e^{-\Lambda}$ stated in
 Eq.~\eqref{eq:escape-scale}, via the marginal-likelihood route. Take a Gaussian prior
 $p(\theta)=\mathcal N(\mu_0,\Sigma_0)$ and observation $y=\mu(\theta,\xi)+\varepsilon$
@@ -158,6 +183,32 @@ posterior expectations; finite chi-square divergence gives the $O(1/J)$ bias rat
 through the SNIS central limit theorem. With a perfect proposal the weights are the
 constant of Eq.~\eqref{eq:widentity} and the estimator is exact in the weights.
 
+\section{Finite variance and the likelihood-factor cancellation}
+\label{app:chi2}
+The $O(1/J)$ rate in Theorem~\ref{thm:consistency} requires the chi-square divergence
+$\chi^2(p(\cdot\mid h)\,\|\,q_\phi(\cdot\mid h))=\mathbb{E}_{q_\phi}\!\big[(p(\theta\mid h)/q_\phi(\theta\mid h))^2\big]-1$
+to be finite, which holds for any NPE that covers the posterior. It is worth seeing why
+PACE's weight has this property when the naive alternative does not. Estimating the
+per-step gain by drawing contrastives from $q_\phi$ but \emph{targeting the prior
+marginal}, as a prior-contrastive denominator does, would weight each draw by
+$p(\theta_\ell)/q_\phi(\theta_\ell\mid h)$, whose divergence is
+\begin{equation}
+\label{eq:chi2-prior}
+\chi^2\!\big(p(\theta)\,\big\|\,q_\phi(\cdot\mid h)\big)=\int\frac{p(\theta)^2}{q_\phi(\theta\mid h)}\,\ud\theta-1 .
+\end{equation}
+Since $q_\phi(\cdot\mid h)$ approximates the concentrated posterior, it has negligible
+mass in the prior-dominated tails where $p(\theta)$ does not vanish, so the integrand
+$p(\theta)^2/q_\phi(\theta\mid h)$ diverges and this $\chi^2$ is unbounded. PACE's weight
+is instead
+\[
+w_j=\frac{p(\theta_j)\,p(h\mid\theta_j)}{q_\phi(\theta_j\mid h)}\;\propto\;\frac{p(\theta_j\mid h)}{q_\phi(\theta_j\mid h)} ,
+\]
+where the likelihood factor $p(h\mid\theta_j)$ is small exactly in those prior tails and
+cancels the divergence, leaving the posterior-to-proposal ratio whose $\chi^2$ is finite
+for a covering NPE. This cancellation is what makes the cost transfer of
+Section~\ref{sec:m-costtransfer} work: the same likelihood factor that retargets the
+estimator from the prior to the posterior is what keeps its variance finite.
+
 \section{Decomposition}
 Substituting $\tilde w_k=w_k/W$ with $W=\sum_k w_k$ into Eq.~\eqref{eq:pace} and
 factoring $p(y_{t,j}\mid\theta_j,\xi_t)$ out of the inner sum using
@@ -169,17 +220,38 @@ $\hat I^{\mathrm{PACE}}=H(\tilde w)-\bar\Phi(\xi_t)$. The collapsed-weight limit
 Eq.~\eqref{eq:lr-limit} follows as in Section~\ref{sec:m-decomp}.
 
 \section{The Fisher limit}
-When a single competitor $\theta_{k^\ast}$ dominates the non-dominant particles, the
-criterion becomes the pairwise log likelihood-ratio
-$\log[p(y_{t,\mathrm{dom}}\mid\theta_{\mathrm{dom}},\xi_t)/p(y_{t,\mathrm{dom}}\mid\theta_{k^\ast},\xi_t)]$,
-whose expectation over $y_{t,\mathrm{dom}}$ is
-$D_{\mathrm{KL}}\!\big(p(y_t\mid\theta_{\mathrm{dom}},\xi_t)\,\|\,p(y_t\mid\theta_{k^\ast},\xi_t)\big)$.
-For Gaussian likelihoods with a linearised forward map this KL reduces to
-$\tfrac12(\theta_{\mathrm{dom}}-\theta_{k^\ast})^\top F(\xi_t)(\theta_{\mathrm{dom}}-\theta_{k^\ast})$,
-and taking $\theta_{k^\ast}$ as a posterior draw with covariance
-$\Sigma_{\mathrm{post}}$ gives the expected criterion
+We expand the collapsed-weight criterion of Section~\ref{sec:m-collapse}. When a single
+competitor $\theta_{k^\ast}=\arg\max_{k\ne\mathrm{dom}}w_k$ dominates the remaining
+non-dominant particles, the design-dependent term reduces to one summand,
+\begin{equation}
+\label{eq:pairwise}
+\bar\Phi(\xi_t)\approx\frac{w_{k^\ast}}{w_{\mathrm{dom}}}\,r_{k^\ast\leftarrow\mathrm{dom}}(\xi_t)
+=\frac{w_{k^\ast}}{w_{\mathrm{dom}}}\,\frac{p(y_{t,\mathrm{dom}}\mid\theta_{k^\ast},\xi_t)}{p(y_{t,\mathrm{dom}}\mid\theta_{\mathrm{dom}},\xi_t)} .
+\end{equation}
+The prefactor $w_{k^\ast}/w_{\mathrm{dom}}$ is constant in $\xi_t$, so minimising
+$\bar\Phi$ is maximising the pairwise log likelihood-ratio
+$\log[p(y_{t,\mathrm{dom}}\mid\theta_{\mathrm{dom}},\xi_t)/p(y_{t,\mathrm{dom}}\mid\theta_{k^\ast},\xi_t)]$.
+Its expectation over $y_{t,\mathrm{dom}}\sim p(y_t\mid\theta_{\mathrm{dom}},\xi_t)$ is the
+Kullback-Leibler divergence
+\[
+\mathbb{E}_{y_{t,\mathrm{dom}}}\!\left[\log\frac{p(y_{t,\mathrm{dom}}\mid\theta_{\mathrm{dom}},\xi_t)}{p(y_{t,\mathrm{dom}}\mid\theta_{k^\ast},\xi_t)}\right]
+= D_{\mathrm{KL}}\!\big(p(y_t\mid\theta_{\mathrm{dom}},\xi_t)\,\|\,p(y_t\mid\theta_{k^\ast},\xi_t)\big) .
+\]
+For Gaussian likelihoods with a linearised forward map
+$\mu(\theta,\xi_t)\approx\mu(\theta_{\mathrm{dom}},\xi_t)+J_{\xi_t}(\theta-\theta_{\mathrm{dom}})$,
+this reduces to
+$\tfrac12(\theta_{\mathrm{dom}}-\theta_{k^\ast})^\top F(\xi_t)(\theta_{\mathrm{dom}}-\theta_{k^\ast})$
+with $F(\xi_t)=J_{\xi_t}^\top R^{-1}J_{\xi_t}$, and treating $\theta_{k^\ast}$ as a
+posterior draw with covariance $\Sigma_{\mathrm{post}}$ gives the expected criterion
 $\tfrac12\,\mathrm{tr}(F(\xi_t)\Sigma_{\mathrm{post}})$, a trace approximation to the
 Gaussian-linearised (D-optimal) EIG.
+
+This KL connection holds only for the pairwise case. The general weighted-sum criterion
+of Eq.~\eqref{eq:lr-limit} is a sum of likelihood \emph{ratios}, not log-ratios, and
+their expectations are constant in the design,
+$\mathbb{E}_{y_{t,\mathrm{dom}}}[r_{k\leftarrow\mathrm{dom}}]=\int p(y\mid\theta_k,\xi_t)\,\ud y=1$;
+there it is the realised $y_{t,\mathrm{dom}}$, not its expectation, that carries the
+design signal.
 
 \chapter{Supplementary tables}
 \label{app:supp}
@@ -215,6 +287,8 @@ Goodwin & 10 & 169, 81, 37, 23, 12, 8, 6, 5, 6, 2 & $-0.48$ vs rand. \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\input{sections/perstep_decomposition}
 
 \chapter{Diagnostic protocols}
 \label{app:diagnostics}
@@ -376,26 +450,29 @@ appear in the saturation survey.
 
 \begin{table}[h]
 \centering\footnotesize
-\caption[Experiment configurations]{Per-system experiment configurations. Optimiser
-is forward-only cross-entropy (CEM) unless an ablation is noted; policy denotes DAD.
-$L/J$ is the contrastive budget ($J$ for PACE, $L_{\mathrm{train}}$ for DAD).}
+\caption[Experiment configurations]{Per-system experiment configurations for the
+deployed PACE-ftk runs. Optimiser is forward-only cross-entropy (CEM); $L/J$ is the
+contrastive budget ($J$ particles for PACE, $L_{\mathrm{train}}$ for DAD);
+$N_{\mathrm{cand}}$ is the candidate count per CEM round; $C$ is the number of CEM
+refinement rounds ($C{=}0$ is an unrefined random pool). The PACE-grad ablation uses the
+same proposal and candidate budget with gradient refinement instead of CEM.}
 \label{tab:config}
-\begin{tabular}{lrrrlrrr}
+\begin{tabular}{lrrrlrrrr}
 \toprule
-System & $d_\theta$ & $d_\xi$ & $T$ & opt. & $L/J$ & $N_{\mathrm{cand}}$ & $L_{\mathrm{eval}}$ \\
+System & $d_\theta$ & $d_\xi$ & $T$ & opt. & $L/J$ & $N_{\mathrm{cand}}$ & $C$ & $L_{\mathrm{eval}}$ \\
 \midrule
-CES & 4 & 6 & 10 & CEM & 1000 & 1000 & $10^7$ \\
-ASM1 & 12 & 2 & 5 & CEM & 500 & 50 & $5{\times}10^4$ \\
-SEIR R=3 & 9 & 9 & 10 & CEM & 1000 & 1000 & $10^7$ \\
-Monod & 2 & 1 & 14 & CEM & 1000 & 1000 & $5{\times}10^3$ \\
-Goodwin & 5 & 1 & 10 & CEM & 1000 & 1000 & $5{\times}10^3$ \\
-Src.\ loc.\ $p{=}2$ & 4 & 2 & 10 & CEM & 1000 & 1000 & $10^5$ \\
-Src.\ loc.\ $p{=}5$ & 10 & 5 & 30 & CEM & 1000 & 1000 & $10^5$ \\
-Src.\ loc.\ $p{=}8$ & 16 & 8 & 30 & CEM & 1000 & 1000 & $10^5$ \\
-PK 1-comp $T{=}3$ & 4 & 1 & 3 & CEM & 1000 & 1000 & $2{\times}10^3$ \\
-PK 1-comp $T{=}5$ & 4 & 1 & 5 & CEM & 1000 & 1000 & $2{\times}10^3$ \\
-PK 8-comp & 20 & 1 & 5 & CEM & 1000 & 1000 & $2{\times}10^3$ \\
-PI3K & 6 & 2 & 8 & CEM & 1000 & 1000 & $10^5$ \\
+CES & 4 & 6 & 10 & CEM & 1000 & 1000 & 1 & $10^7$ \\
+ASM1 & 12 & 2 & 5 & CEM & 500 & 50 & 0 & $5{\times}10^4$ \\
+SEIR R=3 & 9 & 9 & 10 & CEM & 1000 & 1000 & 1 & $10^7$ \\
+Monod & 2 & 1 & 14 & CEM & 1000 & 1000 & 1 & $5{\times}10^3$ \\
+Goodwin & 5 & 1 & 10 & CEM & 1000 & 1000 & 1 & $5{\times}10^3$ \\
+Src.\ loc.\ $p{=}2$ & 4 & 2 & 10 & CEM & 1000 & 1000 & 1 & $10^5$ \\
+Src.\ loc.\ $p{=}5$ & 10 & 5 & 30 & CEM & 1000 & 1000 & 1 & $10^5$ \\
+Src.\ loc.\ $p{=}8$ & 16 & 8 & 30 & CEM & 1000 & 1000 & 1 & $10^5$ \\
+PK 1-comp $T{=}3$ & 4 & 1 & 3 & CEM & 1000 & 1000 & 1 & $2{\times}10^3$ \\
+PK 1-comp $T{=}5$ & 4 & 1 & 5 & CEM & 1000 & 1000 & 1 & $2{\times}10^3$ \\
+PK 8-comp & 20 & 1 & 5 & CEM & 1000 & 1000 & 1 & $2{\times}10^3$ \\
+PI3K & 6 & 2 & 8 & CEM & 1000 & 1000 & 1 & $10^5$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -403,20 +480,60 @@ PI3K & 6 & 2 & 8 & CEM & 1000 & 1000 & $10^5$ \\
 \chapter{Neural posterior estimator}
 \label{app:npe}
 
-\paragraph{Data and target.}
-Training data are triples $(\theta,\xi_{1:T},y_{1:T})$ with $\theta\sim p(\theta)$,
-designs drawn independently of $\theta$, and observations from the simulator. Because
-the design distribution does not depend on $\theta$, the training posterior equals
-the true posterior for any history, so the estimator is correct regardless of how
-designs are chosen at deployment. Random truncation of trajectories during training
-teaches the estimator to return a posterior at any prefix length.
+\section{Data generation and posterior-target correctness}
+Training data consist of $N$ triples $(\theta_i,\xi^{(i)}_{1:T},y^{(i)}_{1:T})$:
+$\theta_i\sim p(\theta)$, designs $\xi^{(i)}_t\sim\mathrm{Uniform}(\Xi)$ sampled
+independently for all $T$ steps, and observations
+$y^{(i)}_t\sim p(y_t\mid\theta_i,\xi^{(i)}_t)$. Because the design distribution
+$p(\xi_{1:t})$ does not depend on $\theta$, the training-joint posterior equals the
+true posterior:
+\begin{equation}
+\label{eq:npe-correct}
+p_{\mathrm{train}}(\theta\mid h_t)
+= \frac{p(\theta)\,p(\xi_{1:t})\,p(y_{1:t}\mid\theta,\xi_{1:t})}{p_{\mathrm{train}}(h_t)}
+= \frac{p(\theta)\,p(y_{1:t}\mid\theta,\xi_{1:t})}{p(y_{1:t}\mid\xi_{1:t})}
+= p(\theta\mid y_{1:t},\xi_{1:t}),
+\end{equation}
+where $p(\xi_{1:t})$ cancels. The NPE therefore targets the correct posterior for
+\emph{any} history $h_t$, regardless of how the designs were chosen. At deployment PACE
+queries the NPE with histories containing optimally selected designs; the posterior is
+determined by Bayes' rule given the data, not by the training design distribution. Each
+training sample is a full $T$-step trajectory, and random truncation
+($t_i\sim\mathrm{Uniform}\{1,\dots,T\}$, masking steps $t>t_i$) teaches the network to
+produce posteriors from any prefix length.
 
-\paragraph{Conditioning and density.}
-The history is encoded with a set-equivariant network: a shared trial network maps
-each triple $(y_s,\xi_s,s/T)$ to an embedding, the embeddings are sum-pooled to
-preserve the count signal, and a set network produces the conditioning vector. The
-density is a neural spline flow with twelve coupling transforms and hidden width
-$256$, chosen for fast exact density evaluation, which the importance weighting
-requires. Parameters are mapped to an unconstrained space (log for positive, logit
-for bounded). Training uses early stopping; full hyperparameters follow the values
-used to produce the reported results.
+\section{Set-equivariant conditioning}
+The posterior $p(\theta\mid h_t)$ is permutation-invariant with respect to the elements
+of $h_t=\{(y_s,\xi_s,s)\}_{s=1}^{t}$, and the conditioning architecture reflects this.
+Each element is encoded as a triple $(y_s,\xi_s,s/T)$: a $z$-scored observation
+(log-transformed under lognormal noise), a $z$-scored design, and a normalised time
+index. A shared trial network $f_{\mathrm{trial}}:\mathbb{R}^{d_y+d_\xi+1}\to\mathbb{R}^{d_e}$
+(2 layers, SiLU, $d_e=64$) processes each triple independently,
+$e_s=f_{\mathrm{trial}}(y_s,\xi_s,s/T)$. The embeddings are sum-pooled,
+$\bar e=\sum_{s=1}^{t}e_s$ (sum, not mean, to preserve the magnitude signal so that $t$
+observations produce a different embedding than one), a count feature $t/T$ is appended,
+and a set network $f_{\mathrm{set}}:\mathbb{R}^{d_e+1}\to\mathbb{R}^{d_{\mathrm{emb}}}$
+(2 layers, SiLU, $d_{\mathrm{emb}}=128$) produces the final conditioning vector.
+
+\section{Density estimator and training}
+$q_\phi(\theta\mid h_t)$ is a neural spline flow~\citep{durkan2019neural} with $12$
+coupling transforms and hidden dimension $256$. Parameters are mapped to an
+unconstrained space (log for $(0,\infty)$, logit for $(0,1)$). NSF is chosen over a
+flow-matching estimator because the importance reweighting requires fast, exact
+evaluation of $\log q_\phi$ ($\sim$1\,ms, versus $\sim$500\,ms for the ODE solve of a
+flow-matching posterior). Training uses the \texttt{sbi} library~\citep{tejerocantero2020sbi}
+with \texttt{z\_score\_x=`none'}, because the flattened condition includes binary mask
+channels that $z$-scoring would corrupt. The hyperparameters are:
+\begin{center}\small
+\begin{tabular}{ll}
+\toprule
+Hyperparameter & Value \\
+\midrule
+Coupling transforms / hidden dim & 12 / 256 \\
+Learning rate / batch size & $5\times10^{-4}$ / 256 \\
+Max epochs / early-stopping patience & 500 / 30 epochs \\
+Trial network & 2 layers, 64 hidden, SiLU \\
+Set network & 2 layers, 128 hidden, SiLU \\
+\bottomrule
+\end{tabular}
+\end{center}

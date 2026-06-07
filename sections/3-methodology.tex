@@ -264,8 +264,10 @@ $p(y\mid\theta_0,\xi)$ and keeping the leading volume ratio,
 \end{equation}
 where the $\lambda_i$ are the eigenvalues of $\Sigma_0^{1/2}F\Sigma_0^{1/2}$ (similar
 to $\Sigma_0 F$ and hence sharing its eigenvalues) and $\Lambda$ is the
-Gaussian-linearised information gain, equivalently the Bayesian D-optimal value. The
-prior-centring and mode-shift factors omitted from Eq.~\eqref{eq:escape-scale}
+Gaussian-linearised information gain. Appendix~\ref{app:lindley} shows that $\Lambda$ is
+exactly the EIG of the linearised experiment (the Bayesian D-optimal value), so the
+escape budget grows as $e^{\Lambda}=e^{\mathrm{EIG}}$. The prior-centring and mode-shift
+factors omitted from Eq.~\eqref{eq:escape-scale}
 contribute $O(d)$ to the exponent and do not change the exponential scaling
 (Appendix~\ref{app:lindley}).
 
@@ -472,6 +474,33 @@ recipe, but their experiments use its prior-proposal special case (InfoNCE). So 
 sequential learned-proposal estimator was foreseen, but neither paper implements or
 evaluates it.
 
+Written explicitly, the sequential ACE bound \citep[Theorem~5, Eq.~91]{foster2021deep} is
+\begin{equation}
+\label{eq:sace}
+I_T(\pi) \ge \mathbb{E}_{p(\theta_0,h_T\mid\pi)\,q(\theta_{1:L};h_T)}
+\!\left[\log\frac{p(h_T\mid\theta_0,\pi)}{\frac{1}{L+1}\sum_{\ell=0}^{L} p(h_T\mid\theta_\ell,\pi)\,\dfrac{p(\theta_\ell)}{q(\theta_\ell;h_T)}}\right],
+\end{equation}
+and its likelihood-free analogue sLACE \citep[Proposition~4, Eq.~72]{ivanova2021implicit}
+replaces the likelihood $p(h_T\mid\theta_\ell,\pi)$ with a learned critic
+$U(h_T,\theta_\ell)$,
+\begin{equation}
+\label{eq:slace}
+I_T(\pi) \ge \mathbb{E}_{p(\theta_0,h_T\mid\pi)\,q(\theta_{1:L};h_T)}
+\!\left[\log\frac{U(h_T,\theta_0)}{\frac{1}{L+1}\sum_{\ell=0}^{L} U(h_T,\theta_\ell)\,\dfrac{p(\theta_\ell)}{q(\theta_\ell;h_T)}}\right].
+\end{equation}
+Two features of Eqs.~\eqref{eq:sace}--\eqref{eq:slace} matter for the comparison. The
+proposal $q(\theta;h_T)$ conditions on the \emph{full trajectory}, and each contrastive
+enters the self-normalised denominator with weight $p(\theta_\ell)/q(\theta_\ell;h_T)$,
+so the denominator is an importance-sampling estimate of the prior marginal
+$\int p(h_T\mid\theta,\pi)\,p(\theta)\,\ud\theta=p(h_T\mid\pi)$, which is the denominator
+of the \emph{trajectory} mutual information. Setting $q=p(\theta)$ recovers prior
+contrastives (sPCE, and InfoNCE in the likelihood-free case) and the $\log(L+1)$
+ceiling. PACE (Eq.~\eqref{eq:pace}) keeps this algebraic shape but makes two changes:
+the proposal conditions on the history prefix $h_{t-1}$, and the weight is
+$w_j\propto p(\theta_j\mid h_{t-1})/q_\phi(\theta_j\mid h_{t-1})$, so the denominator
+estimates the \emph{posterior}-predictive $p(y_t\mid\xi_t,h_{t-1})$ of the per-step EIG
+rather than the prior marginal. The three differences below make this precise.
+
 PACE differs from these appendix bounds in three ways, none of which is in the
 algebra they share.
 \begin{enumerate}[leftmargin=*,itemsep=0.2em]
@@ -521,9 +550,12 @@ effective sample size follows
 \label{eq:ess}
 \mathrm{ESS}\approx\frac{J}{1+\chi^2(p(\theta\mid h)\,\|\,q_\phi(\theta\mid h))},
 \end{equation}
-and declines as the posterior tightens. This is the same concentration that caused
-saturation, now appearing as weight degeneracy: the burden has moved from policy
-training to amortized inference. Reliable estimation of the EIG \emph{value} under a
+and declines as the posterior tightens. That this $\chi^2$ is finite at all, which the
+bias rate of Theorem~\ref{thm:consistency} requires, is itself due to the likelihood
+factor in the weight: it cancels the divergence that a prior-targeting weight would
+incur (Appendix~\ref{app:chi2}). This is the same concentration that caused saturation,
+now appearing as weight degeneracy: the burden has moved from policy training to
+amortized inference. Reliable estimation of the EIG \emph{value} under a
 collapsed weight set would need a number of particles growing like
 $e^{D_{\mathrm{KL}}(p\,\|\,q_\phi)}$~\citep{chatterjee2018sample}, which is infeasible
 for our systems. Design selection, however, needs reliable \emph{rankings}, not
