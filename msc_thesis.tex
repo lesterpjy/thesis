@@ -1,0 +1,100 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For the use of University of Amsterdam
+% Master of AI thesis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[license]{mscaithesis}  % Can print or not a license
+% The license is very optional and its definition easy to edit in mscaithesis.cls
+
+\usepackage{mwe}  % Only for the example
+
+\usepackage{amssymb} % Math packages are (on purpose) not included in the class document
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+
+\usepackage{natbib}
+
+% Additional packages for this thesis (math classes are intentionally not in the class file)
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% Shorthand macros
+\newcommand{\EIG}{\mathrm{EIG}}
+\newcommand{\ESS}{\mathrm{ESS}}
+\newcommand{\ud}{\mathrm{d}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\hist}{h}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DOCUMENT METADATA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Thesis related entries
+\title{Posterior-Amortized Contrastive Estimation\\ for Sequential Bayesian Experimental Design}
+% \subtitle{}
+
+% Date on which your thesis is submitted
+\date{2026/06/19}
+
+\author{Lester \textsc{Yang}}
+\studentnumber{314159265}
+\period{2026/01/05 -- 2026/06/19}
+\credits{36 ECTS}
+\examiner{Pr. E. Xaminer}
+\dailysupervisor{M. Entor}
+\uvasupervisor{Dr U. Vasupervisor}  % Only if different from daily supervisor, leave empty otherwise
+\addsupervisor{Ir. E. N. Gineer}  % Optional
+
+\begin{document}
+\maketitle
+
+\frontmatter
+        \chapter*{Abstract}
+                \begin{adjustwidth}{1cm}{1cm}
+                        Sequential Bayesian experimental design chooses each new experiment to learn the most about an unknown system. Amortized policy methods train a design network against the sequential prior-contrastive estimation (sPCE) bound. We show that this bound saturates: for $L$ contrastive samples it is capped at $\log(L+1)$ nats, and on systems with broad parameter priors and stiff, high-sensitivity dynamics the number of contrastives needed to escape this ceiling grows exponentially with the information gained per experiment. The training signal, in both its value and its gradient, then vanishes. We introduce PACE (Posterior-Amortized Contrastive Estimation), which replaces the prior contrastives with particles from a neural posterior estimator trained once by simulation-based inference and corrected by self-normalized importance weights. We pair PACE with a forward-only design optimizer that requires no gradients through the simulator. As the posterior contracts the importance weights collapse, yet design rankings survive, because the divergent weight scale cancels across candidate designs and the criterion reduces to a Fisher-information rule. On a suite of twelve dynamical systems, PACE matches or beats the amortized policy wherever the policy training signal has saturated, including a stiff wastewater model on which policy training is infeasible, while learned policies remain stronger on low-information, high-dimensional designs.
+                \end{adjustwidth}
+
+\tableofcontents
+
+\listoffigures
+
+\listoftables
+
+\setlength{\parskip}{5pt}
+
+\include{sections/0-list-symbols}
+
+
+\mainmatter
+        \include{sections/1-introduction}
+        \include{sections/2-related-work}
+        \include{sections/3-methodology}
+        \include{sections/4-results}
+        \include{sections/5-discussion}
+        \include{sections/6-conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{bibliographies/references}
+
+% \newpage
+\appendix
+        \include{sections/7-appendix}
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

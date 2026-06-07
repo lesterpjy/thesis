@@ -1,0 +1,29 @@
+# LaTeX build artifacts (Overleaf compiles from source)
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.run.xml
+*.bcf
+*.nav
+*.snm
+*.vrb
+*.idx
+*.ilg
+*.ind
+*.xdv
+
+# Compiled PDF (Overleaf builds it; remove this line if you want the PDF in the repo)
+msc_thesis.pdf
+
+# Editor / OS
+*.swp
+.DS_Store

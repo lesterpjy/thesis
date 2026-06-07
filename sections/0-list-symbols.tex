@@ -1,0 +1,55 @@
+\chapter{List of Symbols}
+        This list summarises the notation used throughout the thesis. Information is
+        measured in nats (natural logarithm) unless stated otherwise.
+
+        \begin{align*}
+                &\theta \in \Theta && \text{model parameters, with prior } p(\theta) \\
+                &\xi_t && \text{design (experiment) chosen at step } t \\
+                &y_t && \text{observation returned at step } t \\
+                &h_t = \{(\xi_i,y_i)\}_{i=1}^{t} && \text{experimental history after step } t \text{ (with } h_0=\varnothing) \\
+                &I_{h_{t-1}}(\xi_t) && \text{per-step expected information gain at } \xi_t \text{ given } h_{t-1} \\
+                &p(y_t\mid\xi_t,h_{t-1}) && \text{posterior-predictive marginal at step } t \\
+                &\mathcal{I}_T(\pi) && \text{trajectory expected information gain of a policy } \pi \\
+                &L && \text{number of contrastive samples (training or evaluation)} \\
+                &\theta_0;\ \theta_{1:L} && \text{data-generating parameter; prior-drawn contrastives} \\
+                &r_\ell = p(y\mid\theta_\ell)/p(y\mid\theta_0) && \text{likelihood ratio of contrastive } \ell \\
+                &J && \text{number of posterior particles drawn in PACE} \\
+                &q_\phi(\theta\mid h_t) && \text{amortised neural posterior estimator (the IS proposal)} \\
+                &w_j;\ \tilde w_j && \text{importance weight of particle } j; \text{ self-normalised weight} \\
+                &\mathrm{ESS} = 1/\textstyle\sum_j \tilde w_j^2 && \text{effective sample size of the IS weights } (1\le\mathrm{ESS}\le J) \\
+                &M;\ N_{\mathrm{cand}};\ C;\ \rho && \text{inner draws; CEM candidates; CEM rounds; elite fraction} \\
+                &F;\ \Sigma_0;\ \Sigma_{\mathrm{post}} && \text{Fisher information; prior covariance; posterior covariance} \\
+                &\lambda_i && \text{eigenvalues of } \Sigma_0^{1/2} F\,\Sigma_0^{1/2} \\
+                &\Lambda = \tfrac12\textstyle\sum_i\log(1+\lambda_i) && \text{Gaussian-linearised EIG (Bayesian D-optimal value)} \\
+                &L_{\mathrm{escape},50} && \text{empirical escape threshold (median rollout escapes saturation)} \\
+                &S_t;\ \Delta S_t = S_t - S_{t-1} && \text{sPCE on the length-} t \text{ prefix; per-step increment} \\
+                &\Psi_j(\xi);\ \bar\Phi(\xi);\ H(\tilde w) && \text{competitor ratio; design-dependent term; weight entropy} \\
+                &\chi^2;\ D_{\mathrm{KL}};\ \hat k && \text{chi-square divergence; KL divergence; PSIS Pareto shape}
+        \end{align*}
+
+
+\chapter{List of Abbreviations}
+        \begin{table}[h]
+                \centering
+                \begin{tabular}{cl}
+                                BED   & Bayesian experimental design \\
+                                EIG   & Expected information gain \\
+                                MI    & Mutual information \\
+                                PCE   & Prior contrastive estimation \\
+                                sPCE  & Sequential prior contrastive estimation \\
+                                sNMC  & Sequential nested Monte Carlo (upper bound) \\
+                                PACE  & Posterior-amortized contrastive estimation \\
+                                DAD   & Deep adaptive design \\
+                                iDAD  & Implicit deep adaptive design \\
+                                SBI   & Simulation-based inference \\
+                                NPE   & Neural posterior estimation \\
+                                NSF   & Neural spline flow \\
+                                IS    & Importance sampling \\
+                                SNIS  & Self-normalized importance sampling \\
+                                ESS   & Effective sample size \\
+                                CEM   & Cross-entropy method \\
+                                SBC   & Simulation-based calibration \\
+                                PSIS  & Pareto-smoothed importance sampling \\
+                                ODE   & Ordinary differential equation \\
+                \end{tabular}
+        \end{table}

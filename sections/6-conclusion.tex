@@ -1,0 +1,41 @@
+\chapter{Conclusion}
+\label{sec:conclusion}
+
+This thesis set out to make sequential Bayesian experimental design feasible and
+effective on stiff, broad-prior dynamical systems where amortized policy methods
+fail. It answered the main question in the affirmative, through four results linked
+by a single quantity, the likelihood ratio and its prior average $e^{-\Lambda}$.
+
+In answer to RQ1, the prior-contrastive sPCE objective that policy methods are
+trained on saturates at $\log(L+1)$ nats, its gradient vanishes at the same rate,
+and the contrastive budget needed to escape grows as $e^{\Lambda}$. The failure can
+be quantified before training through the escape threshold, which ranges from below
+ten to above a million across the suite. In answer to RQ2, drawing contrastives
+from a posterior estimator trained once by simulation-based inference removes the
+saturation, because the likelihood factor in the importance weight cancels the
+divergence that defeated prior contrastives; the cost does not vanish but moves, as
+the same posterior concentration reappears in the decline of the effective sample
+size. In answer to RQ3, design selection stays valid under that decline, because
+the diverging weight scale enters only design-independent terms and cancels in the
+ranking, and the criterion approaches a Fisher-information rule in the limit. In
+answer to RQ4, PACE matches or beats the policy on every system where the policy
+training signal has saturated, including a stiff wastewater model on which the
+policy cannot be trained, while learned policies remain stronger on low-information,
+high-dimensional designs; the crossover is predicted by the saturation threshold,
+not the effective sample size.
+
+The contribution is therefore both a diagnosis and a method. The diagnosis explains
+why a widely used training signal fails on an important class of systems, and gives
+a cheap test for when it will. The method escapes that failure with a forward-only
+estimator that needs neither a trained policy nor gradients through the simulator,
+and it remains valid in the regime that makes the problem hard.
+
+The conclusions are qualified by the limitations discussed above. The forward-only
+search does not scale to high-dimensional combinatorial designs, PACE returns
+reliable rankings rather than calibrated information values under collapsed weights,
+and the method assumes a posterior estimator that does not collapse onto the wrong
+mode. Future work that addresses these would combine the posterior-contrastive score
+with a learned proposal policy to recover scalability, use observation-conditional
+inner proposals to keep the effective sample size higher, extend the design rule
+beyond a greedy horizon, and test the method on the timed-input biochemical systems
+that motivated it.

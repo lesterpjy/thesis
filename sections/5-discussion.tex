@@ -1,0 +1,71 @@
+\chapter{Discussion}
+\label{sec:discussion}
+
+\section{When to use PACE}
+\label{sec:d-when}
+
+The results give a clear rule for when PACE is the right tool. It is preferred on
+systems with broad priors, high information per experiment, and stiff or
+non-differentiable dynamics, in low to moderate-dimensional continuous design
+spaces. These are exactly the systems on which the prior-contrastive training
+signal saturates, and the screening threshold $L_{\mathrm{escape},50}$ identifies
+them before any policy is trained. On the saturated anchors, CES, SEIR R=3, and
+ASM1, PACE matches or beats the policy, and on ASM1 it works where policy training
+is infeasible.
+
+Learned policies remain the better choice elsewhere. When the escape threshold is
+small, the policy trains without saturation and its trajectory-level view can
+capture design dependencies that a greedy per-step rule does not. This is what we
+see on Monod, on PI3K, and on the highest-dimensional source location task. The
+crossover is governed by saturation, not by parameter dimension and not by the
+effective sample size, so the two methods are complementary rather than competing.
+
+\section{Practical cost}
+\label{sec:d-cost}
+
+PACE shifts cost from a per-step policy-training budget to a one-time inference
+pass plus a modest per-step search. Training the neural posterior estimator takes
+between about $3.6$ and $12.8$ minutes once per system. At deployment, PACE selects
+each design in under four seconds on eleven of the twelve systems, the exception
+being the stiff ASM1 model at about forty seconds per step. By contrast, training a
+policy ranges from a few minutes on the simplest systems to about sixteen hours on
+Monod, and is unstable on CES and infeasible on ASM1 and on SEIR R=3 at the budget
+needed to escape saturation. A deployed policy then produces designs in
+milliseconds, which is faster than PACE per step, but this difference is irrelevant
+for scientific experiments that take minutes to weeks to run. The full timing table
+is in Appendix~\ref{app:walltime}.
+
+\section{Limitations}
+\label{sec:d-limits}
+
+Several limitations qualify the conclusions. The forward-only search does not scale
+to high-dimensional or combinatorial design spaces, where a learned policy is
+stronger; the source location result at $p{=}8$ is the clearest case, and the
+ablation shows the optimiser rather than the estimator is the bottleneck there.
+Under a collapsed effective sample size, PACE produces reliable design rankings but
+not calibrated EIG values, so it should be read as an acquisition criterion rather
+than an absolute information estimate. The method assumes the neural posterior
+estimator does not collapse onto the wrong mode; this is benign for the unimodal
+posteriors of well-observed ODE systems but is a genuine risk under strong
+multimodality, and it must be checked with the diagnostics of
+Section~\ref{sec:r-diag}. The Gaussian-linearised threshold $\Lambda$ is a
+qualitative guide, not a quantitative predictor, on stiff systems. Finally, the
+study evaluates greedy design and a fixed myopic horizon; non-myopic extensions are
+left open.
+
+On reproducibility and validity, all main comparisons use $n=300$ paired rollouts
+with paired tests and report both bounds on the EIG, so the orderings marked
+definitive cannot be reversed by estimation slack. Earlier small-sample estimates
+were replaced by these larger paired runs.
+
+\section{Broader impact}
+\label{sec:d-impact}
+
+More efficient experimental design reduces the number of experiments needed to
+learn a system, which lowers the cost, time, and material or animal use of
+scientific work in areas such as pharmacokinetics, wastewater treatment, and
+bioprocessing. The same machinery applies to epidemic intervention design, where
+recommendations can affect public health policy and should be used with appropriate
+caution and human oversight. PACE also makes its own uncertainty visible through the
+diagnostics it reports, which supports honest use under model misspecification
+rather than overconfident automation.

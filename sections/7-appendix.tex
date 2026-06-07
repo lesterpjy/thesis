@@ -1,0 +1,376 @@
+% Appendix. The main text is self-contained; this is supporting detail.
+
+\chapter{Standard background derivations}
+\label{app:background}
+
+This appendix records the established results used in Section~\ref{sec:m-prelim}.
+They are not contributions of this thesis; they are collected here so the main text
+can state them briefly.
+
+The trajectory information bound (Eq.~\eqref{eq:traj-mi}) is derived in the main text
+(Section~\ref{sec:m-policy}); we record only the contrastive bounding properties and
+the per-step chain rule here.
+
+\section{Bounding properties of the contrastive estimators}
+\label{app:bounds}
+
+Recall $\mathrm{sPCE}_L$ from Eq.~\eqref{eq:spce} and $\mathrm{sNMC}_L$, which uses
+the same numerator but divides the denominator sum by $L$ over the contrastives
+$\theta_{1:L}$ only.
+
+\paragraph{sPCE is a lower bound, capped at $\log(L+1)$.}
+The denominator of sPCE is an average over $L+1$ likelihoods that estimates the
+same marginal $p(y_t\mid\xi_t,h_{t-1})$, but it includes the data-generating
+$\theta_0$, whose likelihood is systematically large for the $y_t$ it produced.
+This biases the denominator up and the ratio down, so
+$\mathbb{E}[\mathrm{sPCE}_L]\le I_{h_{t-1}}(\xi_t)$. Equivalently, sPCE is a
+classification bound: among the $L+1$ exchangeable draws, identifying which
+generated $y_t$ has success probability at most one, so
+$\mathbb{E}[\mathrm{sPCE}_L]=\log(L+1)-H(\text{index}\mid\theta_{0:L},y_t)\le\log(L+1)$.
+
+\paragraph{sNMC is an upper bound.}
+The denominator $\frac1L\sum_{\ell=1}^L p(y_t\mid\theta_\ell,\xi_t)$ is an unbiased
+estimate of the marginal. By Jensen's inequality the expected log of an unbiased
+estimate underestimates the log of the mean, so the log-marginal is underestimated
+and the ratio overestimated, giving $\mathbb{E}[\mathrm{sNMC}_L]\ge I_{h_{t-1}}(\xi_t)$.
+
+Both biases are $O(1/L)$, so $[\mathrm{sPCE}_L,\mathrm{sNMC}_L]$ brackets the true
+EIG and tightens as $L\to\infty$.
+
+\section{Per-step chain rule}
+\label{app:chain}
+
+Let $S_t$ be the sPCE evaluated on the length-$t$ prefix and $S_0=0$. The per-step
+increment $\Delta S_t=S_t-S_{t-1}$ telescopes, $\sum_{t=1}^{T}\Delta S_t=S_T$,
+recovering the trajectory bound. Each $\Delta S_t$ weights the contrastive
+denominator by the running posterior, so it measures the information acquired at
+step $t$ within the operative posterior rather than from a fresh prior estimate.
+
+\chapter{Linearised EIG and the escape threshold}
+\label{app:lindley}
+
+We derive the scaling $\mathbb{E}[r_\ell]\sim e^{-\Lambda}$ of
+Eq.~\eqref{eq:escape-scale}. Take a Gaussian prior $p(\theta)=\mathcal N(\mu_0,\Sigma_0)$
+and observation $y=\mu(\theta,\xi)+\varepsilon$ with $\varepsilon\sim\mathcal N(0,R)$,
+Fisher information $F=J^\top R^{-1}J$ where $J=\partial\mu/\partial\theta|_{\theta_0}$,
+and posterior precision $\Sigma_{\mathrm{post}}^{-1}=\Sigma_0^{-1}+F$.
+
+\paragraph{Laplace marginal.}
+A second-order expansion of the log-likelihood about $\theta_0$ followed by
+completing the square gives the marginal
+\[
+p(y\mid\xi)\approx p(y\mid\theta_0,\xi)\,p(\theta_0)\,e^{\frac12 g^\top\Sigma_{\mathrm{post}}g}\,(2\pi)^{d/2}\det(\Sigma_{\mathrm{post}})^{1/2},
+\]
+with $g$ the log-posterior gradient at $\theta_0$. Dividing by $p(y\mid\theta_0,\xi)$
+as in Eq.~\eqref{eq:Er} and retaining the leading volume ratio,
+\[
+\mathbb{E}[r_\ell]\sim\frac{\det(\Sigma_{\mathrm{post}})^{1/2}}{\det(\Sigma_0)^{1/2}}
+=\frac{1}{\det(I+\Sigma_0F)^{1/2}}=\prod_i(1+\lambda_i)^{-1/2}=e^{-\Lambda},
+\]
+where $\lambda_i$ are the eigenvalues of $\Sigma_0^{1/2}F\Sigma_0^{1/2}$ (similar to
+$\Sigma_0F$, hence sharing eigenvalues) and $\Lambda=\frac12\sum_i\log(1+\lambda_i)$.
+The prior-centering and mode-shift factors contribute $O(d)$ to the exponent and do
+not change the exponential scaling.
+
+\paragraph{Escape threshold.}
+Since $\mathbb{E}[S]=L\,e^{-\Lambda}$, Markov's inequality gives
+$\Pr(S\ge 1)\le L\,e^{-\Lambda}$, so saturation persists while $L\ll e^{\Lambda}$ and
+escape requires $L\gtrsim e^{\Lambda}$. Table~\ref{tab:escape-full} reports the full
+twelve-system measurements.
+
+\begin{table}[h]
+\centering\small
+\caption[Full saturation thresholds]{Empirical escape thresholds at random designs,
+sorted ascending, with the Laplace reference $e^\Lambda$ where available. Stiff and
+Hill-kinetic systems exceed $e^\Lambda$ by one to three orders of magnitude.}
+\label{tab:escape-full}
+\begin{tabular}{lccrrl}
+\toprule
+System & $d_\theta$ & $d_\xi$ & $\Lambda$ & $e^{\Lambda}$ & $L_{\mathrm{escape},50}$ \\
+\midrule
+PK 8-comp & 20 & 1 & $0.05$ & $1.1$ & ${\le}10$ \\
+PK 1-comp & 4 & 1 & $1.02$ & $2.8$ & ${\sim}10$ \\
+PI3K      & 6 & 2 & $1.49$ & $4.4$ & ${\le}10$ \\
+Monod     & 2 & 1 & $4.30$ & $74$ & ${\sim}30$ \\
+CES       & 4 & 6 & -- & -- & ${\sim}10^4$ (static) \\
+Goodwin   & 5 & 1 & $4.40$ & $81$ & ${\sim}10^4$ \\
+ASM1      & 12 & 2 & -- & -- & ${\sim}10^4$ (stiff) \\
+SEIR R=3  & 9 & 9 & $8.64$ & $5{,}648$ & ${>}10^6$ \\
+SEIR R=8  & 14 & 24 & $21.26$ & $1.7{\times}10^9$ & ${>}10^6$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{PACE: consistency, decomposition, and the Fisher limit}
+\label{app:pace}
+
+\section{Consistency}
+Theorem~\ref{thm:consistency} is the standard two-stage self-normalized importance
+sampling result. Support inclusion makes the weighted averages in the numerator and
+denominator of Eq.~\eqref{eq:pace} converge almost surely to the corresponding
+posterior expectations; finite chi-square divergence gives the $O(1/J)$ bias rate
+through the SNIS central limit theorem. With a perfect proposal the weights are the
+constant of Eq.~\eqref{eq:widentity} and the estimator is exact in the weights.
+
+\section{Decomposition}
+Substituting $\tilde w_k=w_k/W$ with $W=\sum_k w_k$ into Eq.~\eqref{eq:pace} and
+factoring $p(y_{t,j}\mid\theta_j,\xi_t)$ out of the inner sum using
+$r_{k\leftarrow j}=p(y_{t,j}\mid\theta_k,\xi_t)/p(y_{t,j}\mid\theta_j,\xi_t)$ gives,
+for the $j$-th term, $\log W-\log w_j-\log[1+\Psi_j(\xi_t)]$ with
+$\Psi_j(\xi_t)=\sum_{k\ne j}(w_k/w_j)r_{k\leftarrow j}$. Taking the weighted sum and
+using $\sum_j\tilde w_j\log w_j=-H(\tilde w)+\log W$ yields Eq.~\eqref{eq:decomp},
+$\hat I^{\mathrm{PACE}}=H(\tilde w)-\bar\Phi(\xi_t)$. The collapsed-weight limit of
+Eq.~\eqref{eq:lr-limit} follows as in Section~\ref{sec:m-decomp}.
+
+\section{The Fisher limit}
+When a single competitor $\theta_{k^\ast}$ dominates the non-dominant particles, the
+criterion becomes the pairwise log likelihood-ratio
+$\log[p(y_{t,\mathrm{dom}}\mid\theta_{\mathrm{dom}},\xi_t)/p(y_{t,\mathrm{dom}}\mid\theta_{k^\ast},\xi_t)]$,
+whose expectation over $y_{t,\mathrm{dom}}$ is
+$D_{\mathrm{KL}}\!\big(p(y_t\mid\theta_{\mathrm{dom}},\xi_t)\,\|\,p(y_t\mid\theta_{k^\ast},\xi_t)\big)$.
+For Gaussian likelihoods with a linearised forward map this KL reduces to
+$\tfrac12(\theta_{\mathrm{dom}}-\theta_{k^\ast})^\top F(\xi_t)(\theta_{\mathrm{dom}}-\theta_{k^\ast})$,
+and taking $\theta_{k^\ast}$ as a posterior draw with covariance
+$\Sigma_{\mathrm{post}}$ gives the expected criterion
+$\tfrac12\,\mathrm{tr}(F(\xi_t)\Sigma_{\mathrm{post}})$, a trace approximation to the
+Gaussian-linearised (D-optimal) EIG.
+
+\chapter{Supplementary tables}
+\label{app:supp}
+
+Table~\ref{tab:ess-full} reports the deployment-time effective sample size across
+steps. It declines on every system but does not track the performance gap: see
+Section~\ref{sec:r-perstep}. For the per-step increments $\Delta S_t$, the
+cumulative $\sum_t\Delta S_t$ for PACE is $+13.06$ on CES (DAD $+12.05$, random
+$+9.05$) and $+14.83$ on SEIR R=3 (DAD $+7.46$, random $+14.15$), and exceeds random
+on every system in the suite.
+
+\begin{table}[h]
+\centering\footnotesize
+\caption[Effective sample size trajectories]{Median per-step effective sample size from
+production rollouts ($J=1000$; reported at $J=1000$ for ASM1 for comparability). The
+decline is monotone from the first step and universal; all eight systems reach
+$\mathrm{ESS}\le3$ by the final step, yet the decline does not track the performance
+gap (Section~\ref{sec:r-perstep}). Only PK 8-comp (omitted, $\mathrm{ESS}/J\approx12$
+to $23\%$ throughout) retains a high effective sample size.}
+\label{tab:ess-full}
+\begin{tabular}{l c >{\raggedright\arraybackslash}p{8.2cm} l}
+\toprule
+System & $T$ & ESS per step (median) & $\Delta_{\mathrm{sPCE}}$ \\
+\midrule
+Monod & 14 & 841, 612, 330, 125, 68, 39, 36, 18, 17, 10, 5, 3, 2, 1 & $-0.66$ vs DAD \\
+CES & 10 & 9, 2, 2, 2, 3, 2, 2, 3, 2, 2 & $+0.93$ vs DAD \\
+Src.\ loc.\ $p{=}2$ & 10 & 40, 29, 15, 12, 6, 3, 2, 2, 2, 1 & $+1.52$ vs DAD \\
+Src.\ loc.\ $p{=}5$ & 30 & 93, 75, 39, 37, 32, 29, 21, 18, 13, 11, 8, 7, 6, 5, 6, 5, 4, 4, 4, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2 & $+1.07$ vs DAD \\
+PI3K & 8 & 561, 285, 87, 17, 8, 3, 3, 2 & $-0.14$ vs DAD \\
+SEIR R=3 & 10 & 20, 8, 3, 2, 2, 1, 1, 2, 1, 1 & $+7.31$ vs DAD \\
+ASM1 & 5 & 77, 16, 6, 3, 3 & $+0.89$ vs rand. \\
+Goodwin & 10 & 169, 81, 37, 23, 12, 8, 6, 5, 6, 2 & $-0.48$ vs rand. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{Diagnostic protocols}
+\label{app:diagnostics}
+
+\paragraph{Bootstrap pick-stability.}
+On ASM1, for several steps of a ten-step rollout, draw $J=500$ particles,
+bootstrap-resample $B=200$ times, recompute the PACE scores for $50$ candidates, and
+record the top-1 agreement. The median is $45\%$, about $23\times$ the chance rate
+of $1/50$. Residual variation comes from resampling changing which particle
+dominates.
+
+\paragraph{Raw versus resampled coverage.}
+Computed in Section~\ref{sec:r-diag}, Table~\ref{tab:coverage}: raw NPE coverage of
+the truth stays in $75$ to $90\%$ while resampled coverage collapses at late steps.
+
+\paragraph{Per-step calibration.}
+Table~\ref{tab:sbc} reports simulation-based calibration KS distances on raw NPE
+samples and on resampled samples. Raw KS is flat or improving across steps; the
+resampled KS degrades, confirming the resampling artifact rather than a proposal
+failure. Simulation-based calibration tests average-case calibration; the raw
+coverage measured at deployment histories is the complementary conditional check.
+
+\begin{table}[h]
+\centering\small
+\caption[Per-step calibration]{Simulation-based calibration KS distance (smaller is
+better) on raw NPE samples versus importance-resampled samples. Raw stays low and
+stable; resampled degrades as the effective sample size collapses.}
+\label{tab:sbc}
+\begin{tabular}{lccc}
+\toprule
+System & step & raw KS & IS KS \\
+\midrule
+CES & 1 & $0.17$ & $0.20$ \\
+    & 10 & $0.13$ & $0.39$ \\
+ASM1 & 1 & $0.18$ & $0.18$ \\
+     & 5 & $0.17$ & $0.24$ \\
+PI3K & 8 & $0.13$ & -- \\
+PK 8-comp & 5 & $0.15$ & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{Wall-clock cost}
+\label{app:walltime}
+
+Table~\ref{tab:walltime} compares the one-time training cost and the per-step
+deployment cost. PACE trains its posterior estimator once in $3.6$ to $12.8$ minutes
+and then selects each design in under four seconds on eleven of twelve systems.
+Policy training ranges from minutes to sixteen hours and is infeasible on the
+stiffest systems.
+
+\begin{table}[h]
+\centering\small
+\caption[Wall-clock cost]{Per-step design time, one-time NPE training, and one-time
+policy training. A dagger marks a local-GPU measurement; an asterisk marks unstable
+policy training (diverged before convergence).}
+\label{tab:walltime}
+\begin{tabular}{lrrrl}
+\toprule
+System & $T$ & PACE/step & NPE train & DAD train \\
+\midrule
+CES & 10 & $0.09$\,s & $3.7$\,min & $9$\,min$^*$ \\
+ASM1 & 5 & $40.5$\,s & $12.8$\,min$^\dagger$ & infeasible \\
+SEIR R=3 & 10 & ${\sim}1$\,s & $3.6$\,min & $9$\,min (useless) \\
+Monod & 14 & $0.22$\,s & $7.2$\,min & $16$\,hr \\
+Goodwin & 10 & $0.16$\,s & $5.1$\,min & failed \\
+PK 8-comp & 5 & $0.34$\,s & $9.6$--$11$\,min & $31$\,min \\
+PI3K & 8 & $3.34$\,s & $8$--$9$\,min & $3.2$\,hr \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{System specifications}
+\label{app:systems}
+
+Every system used in the thesis is defined here. Forward models, parameters,
+priors, and noise are taken from the implementation; per-method experiment
+configurations (horizon $T$, particle count $J$, candidates $N_{\mathrm{cand}}$,
+rounds $C$, evaluation budget $L_{\mathrm{eval}}$) are in Table~\ref{tab:config}.
+Information is in nats throughout.
+
+\section{Static models}
+
+\paragraph{CES utility ($d_\theta{=}4$, $d_\xi{=}6$, $d_y{=}1$).}
+A constant-elasticity-of-substitution utility comparison~\citep{foster2021deep,blau2022optimizing}.
+Parameters are an elasticity $\rho\in[0.01,1]$, two aggregation weights on the
+simplex, and a log scale; the unconstrained prior is roughly standard normal per
+coordinate. For a design $(d_1,d_2)\in[0.01,100]^3{\times}[0.01,100]^3$ the mean is
+$u\,[\,\mathrm{CES}(d_1)-\mathrm{CES}(d_2)\,]$ with
+$\mathrm{CES}(d)=(\sum_i\alpha_i d_i^{\rho})^{1/\rho}$, and the observation is this
+mean passed through a censored sigmoid-normal noise model. The censored boundary mass
+makes policy training unstable.
+
+\paragraph{Source location ($d_\theta{=}2p$, $d_\xi{=}p$).}
+$K{=}2$ point sources in $\mathbb{R}^p$ with locations $\theta\sim\mathcal N(0,I)$,
+ordered by radius to break label switching. A sensor at $\xi\in[-3,3]^p$ reads
+$\log(0.1+\sum_k 1/(\sigma^2+\|\xi-\theta_k\|^2))$ with Gaussian noise of scale
+$0.5$; a multi-resolution variant returns three channels at scales
+$\sigma^2\in\{0.001,0.1,1.0\}$. We use $p\in\{2,5,8\}$.
+
+\paragraph{PK 1-compartment ($d_\theta{=}4$, $d_\xi{=}1$, $d_y{=}1$).}
+The pharmacokinetic model of \citet{ivanova2021implicit}. The implemented forward
+map is the closed form $C(\xi,\theta)=(D/V)(k_a/(k_a-k_e))(e^{-k_e\xi}-e^{-k_a\xi})$
+with dose $D{=}400$, log-normal priors on $(k_a,k_e,V)$, sampling time
+$\xi\in[0,24]$, and heteroscedastic Gaussian noise. The paper reports
+$d_\theta{=}4$; the implementation exposes three kinetic parameters, so the fourth
+should be reconciled when finalising this section.\,% TODO(verify PK 1-comp parameter count vs tab:config)
+
+\section{Pharmacokinetics, signalling, and bioreactors}
+
+\paragraph{PK 8-compartment ($d_\theta{=}20$, $d_\xi{=}1$, $d_y{=}1$).}
+A permeability-limited physiologically based model with seven tissues plus blood and
+a depot, solved in closed form by a matrix exponential of the linear generator. The
+twenty parameters are seven partition coefficients, seven permeabilities, hepatic,
+renal, and gut clearances, an absorption rate, bioavailability, and unbound
+fraction, with log or logit priors. Tight, calibrated priors give it the smallest
+escape threshold despite its dimension. Observation is plasma concentration at a
+sampling time $\xi\in[0,24]$ with heteroscedastic noise.
+
+\paragraph{PI3K signalling ($d_\theta{=}6$, $d_\xi{=}2$, $d_y{=}2$).}
+A four-state model of iRap-induced PIP3 signalling~\citep{liang2024structural}. The
+six rate parameters have log-normal priors. Designs are the input concentrations
+iRap$\in[0,1]$ and the inhibitor LY29$\in[0,25]$. The observations are two
+fluorescence readouts with Gaussian noise. The dynamics are moderately stiff.
+
+\paragraph{Monod and related bioreactors ($d_\theta{\le}2$, $d_\xi{=}1$, $d_y{=}1$).}
+Fed-batch bioreactor models~\citep{monod1949growth,strouwen2026deep}. Monod has two
+parameters $(\mu_{\max},K_s)$ with uniform priors; the state is substrate, biomass,
+and volume, with growth $\mu=\mu_{\max}C_s/(K_s+C_s)$ and feed rate $\xi\in[0,6]$;
+substrate is observed with Gaussian noise. The Haldane variant adds substrate
+inhibition through one extra parameter, and the DC motor is a two-state, two-parameter
+electromechanical system used only in the saturation survey.
+
+\section{Stiff and oscillatory ODE systems}
+
+\paragraph{Goodwin oscillator ($d_\theta{=}5$, $d_\xi{=}1$, $d_y{=}1$).}
+A three-state negative-feedback oscillator with a Hill repression term of high
+cooperativity $n\approx 12$. Parameters have log-normal priors except $n$, which is
+a truncated normal constrained to give oscillation. The high Hill exponent creates an
+identifiability plateau, which is why it is a predicted counter-case. The
+Repressilator is a related six-state oscillator used only in the saturation survey.
+
+\paragraph{ASM1 wastewater ($d_\theta{=}12$, $d_\xi{=}2$, $d_y{=}4$).}
+Activated Sludge Model No.\ 1~\citep{henze2000activated}, a thirteen-state stiff ODE
+with an eight-process rate structure. Twelve kinetic parameters have log-normal
+priors. The two designs are the aeration rate $k_La\in[10,300]$ and the waste sludge
+fraction $Q_w\in[0.01,0.2]$. Four effluent quality variables are observed with
+heteroscedastic noise. The stiffness and the adjoint cost make policy training
+infeasible.
+
+\paragraph{Multi-region SEIR ($d_\theta{=}6{+}R$, $d_\xi{=}3R$, $d_y{=}2R$).}
+$R$ coupled regions, each with susceptible, exposed, infected, and recovered
+compartments, sharing incubation, recovery, and coupling rates and three
+intervention efficacies, with per-region transmission rates. Shared rates have
+log-normal priors and efficacies have Beta priors. The three per-region designs are
+vaccination, distancing, and treatment intensities. Exposed and infected counts are
+observed with lognormal noise. We use $R{=}3$ as the main system; $R{=}5$ and $R{=}8$
+appear in the saturation survey.
+
+\begin{table}[h]
+\centering\footnotesize
+\caption[Experiment configurations]{Per-system experiment configurations. Optimiser
+is forward-only cross-entropy (CEM) unless an ablation is noted; policy denotes DAD.
+$L/J$ is the contrastive budget ($J$ for PACE, $L_{\mathrm{train}}$ for DAD).}
+\label{tab:config}
+\begin{tabular}{lrrrlrrr}
+\toprule
+System & $d_\theta$ & $d_\xi$ & $T$ & opt. & $L/J$ & $N_{\mathrm{cand}}$ & $L_{\mathrm{eval}}$ \\
+\midrule
+CES & 4 & 6 & 10 & CEM & 1000 & 1000 & $10^7$ \\
+ASM1 & 12 & 2 & 5 & CEM & 500 & 50 & $5{\times}10^4$ \\
+SEIR R=3 & 9 & 9 & 10 & CEM & 1000 & 1000 & $10^7$ \\
+Monod & 2 & 1 & 14 & CEM & 1000 & 1000 & $5{\times}10^3$ \\
+Goodwin & 5 & 1 & 10 & CEM & 1000 & 1000 & $5{\times}10^3$ \\
+Src.\ loc.\ $p{=}2$ & 4 & 2 & 10 & CEM & 1000 & 1000 & $10^5$ \\
+Src.\ loc.\ $p{=}5$ & 10 & 5 & 30 & CEM & 1000 & 1000 & $10^5$ \\
+Src.\ loc.\ $p{=}8$ & 16 & 8 & 30 & CEM & 1000 & 1000 & $10^5$ \\
+PK 1-comp $T{=}3$ & 4 & 1 & 3 & CEM & 1000 & 1000 & $2{\times}10^3$ \\
+PK 1-comp $T{=}5$ & 4 & 1 & 5 & CEM & 1000 & 1000 & $2{\times}10^3$ \\
+PK 8-comp & 20 & 1 & 5 & CEM & 1000 & 1000 & $2{\times}10^3$ \\
+PI3K & 6 & 2 & 8 & CEM & 1000 & 1000 & $10^5$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{Neural posterior estimator}
+\label{app:npe}
+
+\paragraph{Data and target.}
+Training data are triples $(\theta,\xi_{1:T},y_{1:T})$ with $\theta\sim p(\theta)$,
+designs drawn independently of $\theta$, and observations from the simulator. Because
+the design distribution does not depend on $\theta$, the training posterior equals
+the true posterior for any history, so the estimator is correct regardless of how
+designs are chosen at deployment. Random truncation of trajectories during training
+teaches the estimator to return a posterior at any prefix length.
+
+\paragraph{Conditioning and density.}
+The history is encoded with a set-equivariant network: a shared trial network maps
+each triple $(y_s,\xi_s,s/T)$ to an embedding, the embeddings are sum-pooled to
+preserve the count signal, and a set network produces the conditioning vector. The
+density is a neural spline flow with twelve coupling transforms and hidden width
+$256$, chosen for fast exact density evaluation, which the importance weighting
+requires. Parameters are mapped to an unconstrained space (log for positive, logit
+for bounded). Training uses early stopping; full hyperparameters follow the values
+used to produce the reported results.
