@@ -49,34 +49,80 @@ step $t$ within the operative posterior rather than from a fresh prior estimate.
 \chapter{Linearised EIG and the escape threshold}
 \label{app:lindley}
 
-We derive the scaling $\mathbb{E}[r_\ell]\sim e^{-\Lambda}$ of
-Eq.~\eqref{eq:escape-scale}. Take a Gaussian prior $p(\theta)=\mathcal N(\mu_0,\Sigma_0)$
-and observation $y=\mu(\theta,\xi)+\varepsilon$ with $\varepsilon\sim\mathcal N(0,R)$,
-Fisher information $F=J^\top R^{-1}J$ where $J=\partial\mu/\partial\theta|_{\theta_0}$,
-and posterior precision $\Sigma_{\mathrm{post}}^{-1}=\Sigma_0^{-1}+F$.
+We derive in full the scaling $\mathbb{E}[r_\ell]\sim e^{-\Lambda}$ stated in
+Eq.~\eqref{eq:escape-scale}, via the marginal-likelihood route. Take a Gaussian prior
+$p(\theta)=\mathcal N(\mu_0,\Sigma_0)$ and observation $y=\mu(\theta,\xi)+\varepsilon$
+with $\varepsilon\sim\mathcal N(0,R)$. The Fisher information is $F=J^\top R^{-1}J$
+with $J=\partial\mu/\partial\theta|_{\theta_0}$, and the posterior precision is
+$\Sigma_{\mathrm{post}}^{-1}=\Sigma_0^{-1}+F$.
 
-\paragraph{Laplace marginal.}
-A second-order expansion of the log-likelihood about $\theta_0$ followed by
-completing the square gives the marginal
+\paragraph{Step 1: Laplace approximation to the marginal likelihood.}
+Expand the log-likelihood to second order about $\theta_0$,
 \[
-p(y\mid\xi)\approx p(y\mid\theta_0,\xi)\,p(\theta_0)\,e^{\frac12 g^\top\Sigma_{\mathrm{post}}g}\,(2\pi)^{d/2}\det(\Sigma_{\mathrm{post}})^{1/2},
+\log p(y\mid\theta,\xi) \approx \log p(y\mid\theta_0,\xi) + (\theta-\theta_0)^\top s - \tfrac12(\theta-\theta_0)^\top F(\theta-\theta_0),
 \]
-with $g$ the log-posterior gradient at $\theta_0$. Dividing by $p(y\mid\theta_0,\xi)$
-as in Eq.~\eqref{eq:Er} and retaining the leading volume ratio,
+where $s=\nabla_\theta\log p(y\mid\theta,\xi)|_{\theta_0}$ is the score and the
+curvature is the observed information $H=-\nabla_\theta^2\log p(y\mid\theta,\xi)|_{\theta_0}$;
+under Gaussian noise $H=J^\top R^{-1}J=F$ exactly, and for general likelihoods
+$\mathbb{E}_y[H]=F$, so we use $F$ throughout. Adding the Gaussian log-prior and
+completing the square,
 \[
-\mathbb{E}[r_\ell]\sim\frac{\det(\Sigma_{\mathrm{post}})^{1/2}}{\det(\Sigma_0)^{1/2}}
-=\frac{1}{\det(I+\Sigma_0F)^{1/2}}=\prod_i(1+\lambda_i)^{-1/2}=e^{-\Lambda},
+\log\bigl[p(y\mid\theta,\xi)\,p(\theta)\bigr] \approx \log\bigl[p(y\mid\theta_0,\xi)\,p(\theta_0)\bigr] + \tfrac12 g^\top\Sigma_{\mathrm{post}}\,g - \tfrac12(\theta-\hat\theta)^\top\Sigma_{\mathrm{post}}^{-1}(\theta-\hat\theta),
 \]
-where $\lambda_i$ are the eigenvalues of $\Sigma_0^{1/2}F\Sigma_0^{1/2}$ (similar to
-$\Sigma_0F$, hence sharing eigenvalues) and $\Lambda=\frac12\sum_i\log(1+\lambda_i)$.
-The prior-centering and mode-shift factors contribute $O(d)$ to the exponent and do
-not change the exponential scaling.
+where $g=s-\Sigma_0^{-1}(\theta_0-\mu_0)$ is the log-posterior gradient at $\theta_0$
+and $\hat\theta=\theta_0+\Sigma_{\mathrm{post}}\,g$ is the posterior mode. The
+unnormalised posterior is thus approximately Gaussian with covariance
+$\Sigma_{\mathrm{post}}$; integrating the Gaussian kernel
+($\int = (2\pi)^{d/2}\det(\Sigma_{\mathrm{post}})^{1/2}$),
+\[
+p(y\mid\xi) \approx p(y\mid\theta_0,\xi)\,p(\theta_0)\,e^{\frac12 g^\top\Sigma_{\mathrm{post}}\,g}\,(2\pi)^{d/2}\det(\Sigma_{\mathrm{post}})^{1/2}.
+\]
 
-\paragraph{Escape threshold.}
-Since $\mathbb{E}[S]=L\,e^{-\Lambda}$, Markov's inequality gives
-$\Pr(S\ge 1)\le L\,e^{-\Lambda}$, so saturation persists while $L\ll e^{\Lambda}$ and
-escape requires $L\gtrsim e^{\Lambda}$. Table~\ref{tab:escape-full} reports the full
-twelve-system measurements.
+\paragraph{Step 2: Expected importance weight.}
+From Eq.~\eqref{eq:Er}, $\mathbb{E}[r_\ell]=\int p(y\mid\theta,\xi)\,p(\theta)\,\ud\theta\,/\,p(y\mid\theta_0,\xi)$.
+Substituting the Laplace marginal and the Gaussian prior density
+$p(\theta_0)=(2\pi)^{-d/2}\det(\Sigma_0)^{-1/2}\exp(-\tfrac12(\theta_0-\mu_0)^\top\Sigma_0^{-1}(\theta_0-\mu_0))$,
+\[
+\mathbb{E}[r_\ell] \approx \underbrace{\frac{\det(\Sigma_{\mathrm{post}})^{1/2}}{\det(\Sigma_0)^{1/2}}}_{\text{(1) volume ratio}} \cdot \underbrace{\exp\!\Bigl(-\tfrac12(\theta_0-\mu_0)^\top\Sigma_0^{-1}(\theta_0-\mu_0)\Bigr)}_{\text{(2) prior centering}} \cdot \underbrace{e^{\frac12 g^\top\Sigma_{\mathrm{post}}\,g}}_{\text{(3) mode shift}}.
+\]
+Factor (1) is the exponentially small volume ratio that drives saturation. Factor (2)
+involves a Mahalanobis distance that is $\chi^2_d$ with mean $d$, so it is
+$e^{-\Theta(d)}$ (at the mean exponent, $e^{-d/2}$; in exact expectation
+$\mathbb{E}[e^{-\frac12\chi^2_d}]=2^{-d/2}$). Factor (3) is $\ge1$ with exponent
+$O(d)$. Factors (2) and (3) push in opposite directions, contribute $O(d)$ to the
+exponent, and do not affect the exponential scaling in $\Lambda$. Retaining the
+leading volume ratio,
+\[
+\mathbb{E}[r_\ell]\sim\frac{\det(\Sigma_{\mathrm{post}})^{1/2}}{\det(\Sigma_0)^{1/2}}=\frac{1}{\det(I+\Sigma_0 F)^{1/2}}=\prod_i(1+\lambda_i)^{-1/2}=e^{-\Lambda}.
+\]
+
+\paragraph{Step 3: Eigenvalue identity.}
+$\Sigma_0 F$ is similar to the symmetric positive semidefinite matrix
+$M:=\Sigma_0^{1/2}F\Sigma_0^{1/2}$ through $P=\Sigma_0^{1/2}$,
+\[
+P\,M\,P^{-1}=\Sigma_0^{1/2}\bigl(\Sigma_0^{1/2}F\Sigma_0^{1/2}\bigr)\Sigma_0^{-1/2}=\Sigma_0 F .
+\]
+Similar matrices share eigenvalues, and $M$ is symmetric PSD, since for any $v$,
+$v^\top M v=(\Sigma_0^{1/2}v)^\top F(\Sigma_0^{1/2}v)\ge0$; its eigenvalues
+$\lambda_i\ge0$ are therefore real. Hence
+\[
+\det(I+\Sigma_0 F)=\det(I+M)=\prod_i(1+\lambda_i),
+\qquad \Lambda=\tfrac12\sum_i\log(1+\lambda_i).
+\]
+
+\paragraph{Step 4: Escape threshold.}
+The expected contrastive sum is $\mathbb{E}[S]=L\,e^{-\Lambda}$. By Markov's
+inequality $\Pr(S\ge1)\le\mathbb{E}[S]=L\,e^{-\Lambda}$, so saturation persists while
+$\mathbb{E}[S]\ll1$, i.e.\ $L\ll e^{\Lambda}$, and escape requires
+$L\gtrsim e^{\Lambda}$. $\square$
+
+\paragraph{Correction factors.}
+The combined effect of factors (2) and (3) shifts $L_{\mathrm{escape},50}$ by a
+multiplicative factor $\sim e^{O(d)}$, large in absolute terms for $d=12$ (ASM1) but
+subexponential relative to $e^{\Lambda}$ when $\Lambda\gg d$. Table~\ref{tab:escape-full}
+reports the full twelve-system measurements; the structural mechanisms that push the
+\emph{empirical} threshold beyond this Laplace prediction are derived in the main text
+(Section~\ref{sec:m-mechanisms}).
 
 \begin{table}[h]
 \centering\small

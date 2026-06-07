@@ -203,18 +203,32 @@ so
 = -\frac{\sum_{\ell=1}^{L}r_\ell\,\nabla_{\xi_t}\log r_\ell}{1+\sum_{\ell=1}^{L}r_\ell}.
 \end{equation}
 The weights in the numerator are the same exponentially small ratios $r_\ell$ that
-drive $S\to0$. Under a Lipschitz bound $|\nabla_{\xi_t}\log r_\ell|\le C$ on the
-log-likelihood-ratio surface, the triangle inequality gives
-$\big|\sum_\ell r_\ell\nabla_{\xi_t}\log r_\ell\big|\le CS$, hence
+drive $S\to0$. Assume the log-likelihood-ratio surface is Lipschitz in the design,
+$|\nabla_{\xi_t}\log r_\ell|\le C$, which holds for smooth simulators with Lipschitz
+observation maps. Bounding the numerator term by term with the triangle inequality,
+\begin{equation}
+\label{eq:grad-num}
+\left|\sum_{\ell=1}^{L} r_\ell\,\nabla_{\xi_t}\log r_\ell\right|
+\;\le\; \sum_{\ell=1}^{L} r_\ell\,\bigl|\nabla_{\xi_t}\log r_\ell\bigr|
+\;\le\; C\sum_{\ell=1}^{L} r_\ell
+\;=\; C\,S ,
+\end{equation}
+where the first inequality is the triangle inequality, the second uses
+$r_\ell\ge0$ together with the Lipschitz bound, and the last is the definition of
+$S$. Dividing by the denominator $1+S$ of Eq.~\eqref{eq:grad},
 \begin{equation}
 \label{eq:grad-bound}
-|\nabla_{\xi_t}\mathrm{sPCE}_L|\le\frac{CS}{1+S}\xrightarrow{S\to0}0.
+\bigl|\nabla_{\xi_t}\mathrm{sPCE}_L\bigr|
+\;=\; \frac{\left|\sum_{\ell=1}^{L} r_\ell\,\nabla_{\xi_t}\log r_\ell\right|}{1+S}
+\;\le\; \frac{C\,S}{1+S}
+\;\xrightarrow{S\to0}\; 0 .
 \end{equation}
 Even without the Lipschitz bound, every term in the numerator carries the factor
-$r_\ell$, which is exponentially small. This is stronger than value saturation: not
-only does every design score about $\log(L+1)$, but the gradient is near zero
-everywhere, so the policy receives no direction and its parameters drift on Monte
-Carlo noise. Both the objective and its optimisation fail at once.
+$r_\ell$, which is exponentially small, so the conclusion is unchanged. This is
+stronger than value saturation: not only does every design score about $\log(L+1)$,
+but the gradient is near zero everywhere, so the policy receives no direction and its
+parameters drift on Monte Carlo noise. Both the objective and its optimisation fail
+at once.
 
 \subsection{Why prior contrastives fail}
 \label{sec:m-escape}
@@ -321,23 +335,53 @@ this into a large $|\log r_\ell|$.
 
 \paragraph{Non-Gaussian noise.}
 The Laplace step assumed Gaussian noise, for which $\log p(y\mid\theta,\xi)$ is
-quadratic in the predicted mean. Concentration data are usually modelled with
-lognormal noise, for which the log-likelihood gap becomes, in expectation over
-$y\sim p(y\mid\theta_0,\xi)$,
-$\mathbb{E}_y[\log r_\ell]=-\frac{1}{2\sigma^2}\sum_k(\log\mu^{(k)}(\theta_\ell)-\log\mu^{(k)}(\theta_0))^2$,
-a sum over output channels of squared log-differences. Unlike Gaussian noise, which
-is dominated by the largest-magnitude species, lognormal noise penalises a mismatch
-at every channel equally in relative terms, so on systems whose species span orders
-of magnitude the penalties accumulate. Heteroscedastic noise with a scale that
-shrinks at low means is worse still: a contrastive predicting a different order of
-magnitude has a narrow noise scale, so the squared residual against the observed
-$y\approx\mu(\theta_0)$ diverges. In both cases the gap grows faster than the
-Gaussian-quadratic prediction. The three mechanisms compound: broad priors make the
-displacement $\|\theta_\ell-\theta_0\|$ large, high-dynamic-range maps turn that into
-a large observation-space displacement, and non-Gaussian noise turns that into a more
-negative $\log r_\ell$ than the quadratic approximation predicts. Systems with
-several of them, such as ASM1 and SEIR, show the largest gap between $e^{\Lambda}$ and
-$L_{\mathrm{escape},50}$.
+exactly quadratic in the predicted mean $\mu(\theta;\xi)$. Concentration data are
+usually modelled with lognormal noise instead, for which (with scale $\sigma$, per
+output channel)
+\begin{equation}
+\label{eq:lognormal-ll}
+\log p(y\mid\theta,\xi) = -\frac{1}{2\sigma^2}\bigl(\log y-\log\mu(\theta;\xi)\bigr)^2 - \log\bigl(y\,\sigma\sqrt{2\pi}\bigr).
+\end{equation}
+The constant $-\log(y\sigma\sqrt{2\pi})$ cancels in the log-ratio $\log r_\ell=\log
+p(y\mid\theta_\ell,\xi)-\log p(y\mid\theta_0,\xi)$. Taking the expectation over
+$y\sim p(y\mid\theta_0,\xi)$, write $\log y=\log\mu(\theta_0;\xi)+\eta$ with
+$\mathbb{E}[\eta]=0$; the cross term in $\eta$ vanishes and, summing over output
+channels $k$,
+\begin{equation}
+\label{eq:lognormal-gap}
+\mathbb{E}_y[\log r_\ell] = -\frac{1}{2\sigma^2}\sum_k\bigl(\log\mu^{(k)}(\theta_\ell)-\log\mu^{(k)}(\theta_0)\bigr)^2 .
+\end{equation}
+Unlike Gaussian noise, whose gap $-\frac{1}{2}\sum_k(\mu^{(k)}(\theta_\ell)-\mu^{(k)}(\theta_0))^2/R_{kk}$
+is dominated by the largest-magnitude species, the lognormal gap of
+Eq.~\eqref{eq:lognormal-gap} penalises a mismatch at \emph{every} channel equally in
+relative (log) terms. On stiff systems whose species span orders of magnitude, the
+penalties from all channels accumulate, so $|\log r_\ell|$ is far larger than the
+single dominant-species term the Gaussian baseline would predict.
+
+Heteroscedastic Gaussian noise, with a mean-dependent scale
+$\sigma(\mu)=\sqrt{(\mu\,\epsilon)^2+\nu^2}$, is worse still. A contrastive that
+predicts a different order of magnitude, $\mu(\theta_\ell)\ll\mu(\theta_0)$, has a
+narrow noise scale $\sigma(\mu_\ell)\ll\sigma(\mu_0)$, so the residual term
+$(y-\mu_\ell)^2/\sigma(\mu_\ell)^2$ diverges because the observed
+$y\approx\mu(\theta_0)$ is extreme relative to $\sigma(\mu_\ell)$. The gap again grows
+super-quadratically in the mean-level displacement.
+
+\paragraph{Combined effect.}
+The three mechanisms compound through a single chain. Under the Gaussian-quadratic
+baseline the gap is $|\log r_\ell|\sim(\theta_\ell-\theta_0)^\top F\,(\theta_\ell-\theta_0)$,
+which decomposes as $\|\theta_\ell-\theta_0\|^2\cdot\|F\|$. Broad priors (large
+$\Sigma_0$) inflate the displacement $\|\theta_\ell-\theta_0\|^2$, since prior draws
+land far from $\theta_0$; high-dynamic-range maps inflate $\|F\|=\|J^\top R^{-1}J\|$
+through a large Jacobian; and non-Gaussian noise then replaces the quadratic gap with
+the larger forms of Eqs.~\eqref{eq:lognormal-gap} above. The amplification is
+sequential: broad priors make $\|\theta_\ell-\theta_0\|$ large, high-dynamic-range
+maps convert that into a large observation-space displacement, and non-Gaussian noise
+converts that displacement into a more negative $\log r_\ell$ than the quadratic
+approximation predicts. Systems where several mechanisms are present, such as ASM1 and
+SEIR, show the largest gap between $e^{\Lambda}$ and $L_{\mathrm{escape},50}$
+(Table~\ref{tab:escape}); systems with Gaussian noise (PK) track the Laplace
+prediction; and systems with tight priors (PK 8-comp) have $L_{\mathrm{escape},50}\le10$
+regardless of the forward map.
 
 \section{The PACE estimator and the cost transfer}
 \label{sec:m-pace}
@@ -397,6 +441,62 @@ The NPE is trained by minimising $-\mathbb{E}_{p(\theta)p(h\mid\theta)}[\log q_\
 whose gradient is informative no matter how informative the system is, and is then
 frozen. This breaks the circular dependence in which a policy and its contrastive
 proposal are trained together and both lose signal once sPCE saturates.
+
+\subsection{Relation to ACE, sACE, and sLACE}
+\label{sec:m-relation}
+
+The estimator in Eq.~\eqref{eq:pace} belongs to a lineage of contrastive EIG
+estimators from the Foster and Rainforth line of work, and being precise about what is
+and is not new in PACE matters for its positioning. \citet{foster2019variational}
+introduced the variational approach to EIG estimation, learning the inner inference
+network once and reusing it across outcomes, and gave the posterior-style lower bound
+and the nested-Monte-Carlo upper bound that PACE's evaluation brackets descend from.
+\citet{foster2020unified} named the two estimators we build on. Prior contrastive
+estimation (PCE) draws the contrastives from the prior; adaptive contrastive
+estimation (ACE) draws them from a \emph{learned} proposal $q_\phi(\theta\mid y)$ and
+adds the data-generating $\theta_0$ to the denominator, which turns the estimator into
+a lower bound that can be optimised jointly in the design and the proposal. Their
+Theorem~1 records the property PACE reuses: if the proposal equals the posterior, the
+estimator is exact for \emph{every} contrastive count, with no contrastives needed.
+This is the static analogue of our perfect-proposal identity
+(Section~\ref{sec:m-costtransfer}). Crucially, ACE in \citet{foster2020unified} is a
+\emph{static}, single-experiment estimator: the proposal conditions on one outcome
+and is trained jointly with the design.
+
+The sequential, learned-proposal versions exist only as unevaluated appendix results.
+\citet{foster2021deep} state and prove the sequential ACE bound (their Appendix~B,
+Theorem~5) but train DAD on prior-contrastive sPCE, explicitly deferring the learned
+proposal ``in the interest of simplicity''. \citet{ivanova2021implicit} give the
+likelihood-free version, sLACE (their Appendix~B, Proposition~4), with a training
+recipe, but their experiments use its prior-proposal special case (InfoNCE). So the
+sequential learned-proposal estimator was foreseen, but neither paper implements or
+evaluates it.
+
+PACE differs from these appendix bounds in three ways, none of which is in the
+algebra they share.
+\begin{enumerate}[leftmargin=*,itemsep=0.2em]
+  \item \textbf{Target.} sACE and sLACE bound the total trajectory mutual information,
+  whose denominator is the prior-marginal under the outer measure $p(\theta)$. PACE
+  targets the per-step EIG given history (Eq.~\eqref{eq:step-eig}), whose denominator
+  is the posterior-predictive under $p(\theta\mid h_{t-1})$. This retargeting from the
+  prior to the running posterior, not the estimator algebra, is the conceptual move,
+  and it is what makes the saturation diagnosis and the cost transfer apply.
+  \item \textbf{Proposal training.} sACE and sLACE train the proposal jointly with the
+  design policy inside the BED objective, which is exactly the circular dependence that
+  loses signal when the objective saturates. PACE trains the proposal once, by
+  simulation-based inference on simulated pairs (a forward-KL objective), decoupled
+  from any design loop, and then freezes it. Online per-step retraining of the
+  posterior \citep{klein2026supercharging,zaballa2025bridging} is a different way to
+  avoid the prior, at a per-step training cost PACE does not pay.
+  \item \textbf{Saturation diagnosis.} The escape threshold $L_{\mathrm{escape}}\approx
+  e^{\Lambda}$ (Section~\ref{sec:m-saturation}) and its empirical map across systems
+  appear in none of these works; they are what identifies, in advance, the regime in
+  which the prior-contrastive objective fails and PACE is needed.
+\end{enumerate}
+We concede the bound-level overlap plainly: the learned-proposal contrastive estimator
+is established prior art in the static case and a proven (if unevaluated) bound in the
+sequential case. PACE's contribution rests on the retargeting and the saturation
+theory, with the estimator as the vehicle that carries them.
 
 \subsection{The cost transfer: effective sample size}
 \label{sec:m-costtransfer}
