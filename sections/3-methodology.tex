@@ -617,7 +617,12 @@ criterion
 = \arg\min_{\xi_t}\sum_{k\ne\mathrm{dom}}\frac{w_k}{w_{\mathrm{dom}}}\,r_{k\leftarrow\mathrm{dom}}(\xi_t).
 \end{equation}
 PACE selects the design that best separates the dominant particle from its
-competitors, with fixed weights $w_k/w_{\mathrm{dom}}$.
+competitors, with fixed weights $w_k/w_{\mathrm{dom}}$. The monotone identity
+$\arg\min_{\xi_t}\log[1+\Psi_{\mathrm{dom}}]=\arg\min_{\xi_t}\Psi_{\mathrm{dom}}$ is exact
+for a single realised $y_{t,\mathrm{dom}}$; with $M{>}1$ observation draws per particle,
+Algorithm~\ref{alg:ftk} ranks designs by the mean of $\log[1+\Psi_{\mathrm{dom}}(\xi_t)]$
+over draws, which is the faithful scored objective and reduces to the weighted-ratio
+form of Eq.~\eqref{eq:lr-limit} only at $M{=}1$.
 
 \subsection{Common-mode cancellation}
 \label{sec:m-cancellation}
@@ -761,9 +766,15 @@ $N_{\mathrm{cand}}$, restarts $R$, Adam steps $K$, step size $\eta$
 
 We evaluate every method on the same prior-contrastive scale. For each rollout we
 report the bracket $[\mathrm{sPCE}_L,\mathrm{sNMC}_L]$, computed on the same rollouts
-at the same $L$, which bounds the true mean EIG from below and above. When one
-method's lower bound exceeds another's upper bound by more than the combined standard
-error, the ordering is definitive and no estimation slack can reverse it. All main
+at the same $L$, which bounds the true mean EIG from below and above. These estimators
+use the prior $p(\theta)$ in their denominator, so they bound the prior-contrastive
+per-step gain, the common, method-agnostic scale shared by PACE, DAD, and random and
+the one on which the saturation analysis operates. This is not the posterior-conditional
+per-step EIG of Eq.~\eqref{eq:step-eig} that PACE's own estimator targets; the two
+coincide at $t{=}1$ (empty history) and are reconciled step by step by the chain-rule
+increments $\Delta S_t$ introduced below. When one method's lower bound exceeds
+another's upper bound by more than the combined standard error, the ordering is
+definitive and no estimation slack can reverse it. All main
 comparisons use $n=300$ paired rollouts, three data-generating seeds of one hundred
 each, with paired tests, since small-sample sPCE estimates are unreliable.
 

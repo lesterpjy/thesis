@@ -201,7 +201,12 @@ software package for nonlinear optimal design in systems biology using the
 Jensen-Shannon divergence between predictive densities. These criteria reappear inside
 PACE: the collapsed-weight limit of the PACE score reduces to a Fisher-information
 criterion (Chapter~\ref{sec:methodology}), which connects the method to this classical
-line even though it is derived from a contrastive estimator.
+line even though it is derived from a contrastive estimator. In that same limit the
+criterion becomes a likelihood-ratio test between two parameter hypotheses, the
+sequential-analysis object introduced by \citet{wald1945sequential} and used for
+Bayesian adaptive model discrimination by \citet{cavagnaro2010adaptive}; PACE recovers
+this discriminative criterion automatically as the effective sample size collapses,
+rather than by design.
 
 \section{Summary and the gap}
 \label{sec:rw-gap}

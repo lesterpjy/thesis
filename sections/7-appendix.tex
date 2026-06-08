@@ -73,6 +73,16 @@ headline relation $L_{\mathrm{escape}}\sim e^{\Lambda}=e^{\mathrm{EIG}}$: the co
 budget needed to escape saturation grows as the exponential of the experiment's
 information.
 
+\paragraph{Interpretation.} Each $\lambda_i$ is a per-axis signal-to-noise ratio. It is
+an eigenvalue of the prior-scaled Fisher information $\Sigma_0^{1/2}F\Sigma_0^{1/2}$,
+comparing how much the experiment informs direction $i$ (through $F$) against the prior
+uncertainty there (through $\Sigma_0$). A well-identified direction has $\lambda_i\gg1$
+and contributes $\tfrac12\log(1+\lambda_i)\approx\tfrac12\log\lambda_i$ nats; a
+barely-informed direction has $\lambda_i\ll1$ and contributes almost nothing. $\Lambda$
+is the sum of these per-axis contributions, and $e^{\Lambda}=\prod_i(1+\lambda_i)^{1/2}$
+is the factor by which the posterior volume shrinks below the prior, which is exactly
+the contrastive budget needed to escape saturation.
+
 \section{The expected importance weight and the escape threshold}
 We derive in full the scaling $\mathbb{E}[r_\ell]\sim e^{-\Lambda}$ stated in
 Eq.~\eqref{eq:escape-scale}, via the marginal-likelihood route. Take a Gaussian prior
@@ -253,6 +263,29 @@ $\mathbb{E}_{y_{t,\mathrm{dom}}}[r_{k\leftarrow\mathrm{dom}}]=\int p(y\mid\theta
 there it is the realised $y_{t,\mathrm{dom}}$, not its expectation, that carries the
 design signal.
 
+\section{The dominant particle, and why standard IS fixes do not help}
+\label{app:domparticle}
+Under a collapsed weight set the dominant particle $\theta_{\mathrm{dom}}$ is the
+posterior draw that the NPE most \emph{undercovers}: its self-normalised weight
+$\tilde w_j\propto p(\theta_j\mid h)/q_\phi(\theta_j\mid h)$ is largest where the proposal
+places too little mass relative to the true posterior, typically a posterior-tail
+sample. This is why design selection keeps a signal even as $\mathrm{ESS}\to1$: the
+criterion of Eq.~\eqref{eq:lr-limit} discriminates this tail representative from the
+bulk rather than collapsing onto the posterior mean.
+
+Two natural alternatives are worse. Dropping the importance weights and scoring with the
+raw NPE particles fails because, once the posterior is tight, all $J$ particles cluster
+near $\theta_{\mathrm{dom}}$, every ratio $r_{k\leftarrow j}\approx1$, and the score is
+flat across designs; the reweighting is what keeps a discriminative contrastive in the
+bank. Standard remedies for heavy-tailed importance weights also do not apply here.
+Pareto-smoothed importance sampling~\citep{vehtari2024pareto} assumes a finite-variance
+tail (Pareto $\hat k<0.7$), whereas here $\hat k$ is large by construction; truncating
+the weights trades the (cancelling) variance for a bias that dominates at
+$\mathrm{ESS}/J\sim10^{-3}$; and defensive mixtures that fold the prior back into the
+proposal reintroduce exactly the prior-contrastive cost $L_{\mathrm{escape}}$ that PACE
+removes. PACE instead accepts the collapse and relies on common-mode cancellation, which
+requires only that the weights are shared across candidate designs.
+
 \chapter{Supplementary tables}
 \label{app:supp}
 
@@ -300,6 +333,36 @@ record the top-1 agreement. The median is $45\%$, about $23\times$ the chance ra
 of $1/50$. Residual variation comes from resampling changing which particle
 dominates.
 
+\paragraph{ESS-regime interpolation.}
+Classifying each (system, step) cell by $\mathrm{ESS}/J$ as EIG-estimation
+($\ge10\%$), transition ($1$--$10\%$), or dominant-particle ($<1\%$),
+PACE spans a more than hundredfold range across systems without any user intervention,
+and individual systems traverse the regimes within a single rollout as the posterior
+tightens (Table~\ref{tab:ess-regime}). PK 8-comp, with tight priors, is the only system
+that stays in the EIG-estimation regime throughout; PI3K traverses all three;
+source-location and ASM1 reach the dominant-particle regime by their final steps yet
+still deliver positive design value. This is the smooth interpolation of
+Section~\ref{sec:m-cancellation} made empirical.
+
+\begin{table}[h]
+\centering\small
+\caption[ESS regimes]{Range of $\mathrm{ESS}/J$ across steps and the regime traversed,
+classified as EIG-estimation ($\ge10\%$), transition ($1$--$10\%$), or
+dominant-particle ($<1\%$). The regime is set by system informativeness (the
+prior-to-posterior volume ratio), not parameter dimension.}
+\label{tab:ess-regime}
+\begin{tabular}{lccl}
+\toprule
+System & $d_\theta$ & $\mathrm{ESS}/J$ range & Regime traversed \\
+\midrule
+PK 8-comp & 20 & 12--23\% & EIG estimation throughout \\
+PI3K & 6 & 0.2--56\% & EIG $\to$ transition $\to$ dominant-particle \\
+Src.\ loc.\ $p{=}2$ & 4 & 0.1--4\% & transition $\to$ dominant-particle \\
+ASM1 & 12 & 0.3--8\% & transition $\to$ dominant-particle \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Raw versus resampled coverage.}
 Computed in Section~\ref{sec:r-diag}, Table~\ref{tab:coverage}: raw NPE coverage of
 the truth stays in $75$ to $90\%$ while resampled coverage collapses at late steps.
@@ -314,19 +377,35 @@ coverage measured at deployment histories is the complementary conditional check
 \begin{table}[h]
 \centering\small
 \caption[Per-step calibration]{Simulation-based calibration KS distance (smaller is
-better) on raw NPE samples versus importance-resampled samples. Raw stays low and
-stable; resampled degrades as the effective sample size collapses.}
+better) on raw NPE samples (tests $q_\phi$ directly) versus importance-resampled
+samples. Upper block: stiff-ODE systems with severe ESS collapse ($n{=}20$ synthetic
+trajectories, $J{=}1000$). Lower block: unsaturated systems from controlled diagnostics
+(IS KS not computed). Raw KS stays low and stable across steps; IS KS degrades as the
+effective sample size collapses. $^\ddagger$The source-location $p{=}8$ diagnostic uses
+a $15$-step horizon; the production system uses $T{=}30$.}
 \label{tab:sbc}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-System & step & raw KS & IS KS \\
+System & step & ESS & raw KS & IS KS \\
 \midrule
-CES & 1 & $0.17$ & $0.20$ \\
-    & 10 & $0.13$ & $0.39$ \\
-ASM1 & 1 & $0.18$ & $0.18$ \\
-     & 5 & $0.17$ & $0.24$ \\
-PI3K & 8 & $0.13$ & -- \\
-PK 8-comp & 5 & $0.15$ & -- \\
+CES ($d_\theta{=}4$, $T{=}10$)
+  & 1 & $65.8$ & $0.17$ & $0.20$ \\
+  & 5 & $6.7$ & $0.14$ & $0.33$ \\
+  & 10 & $10.7$ & $0.13$ & $0.39$ \\
+ASM1 ($d_\theta{=}12$, $T{=}5$)
+  & 1 & $97.6$ & $0.18$ & $0.18$ \\
+  & 3 & $14.1$ & $0.17$ & $0.20$ \\
+  & 5 & $8.4$ & $0.17$ & $0.24$ \\
+\midrule
+PI3K ($d_\theta{=}6$, $T{=}8$)
+  & 1 & -- & $0.14$ & -- \\
+  & 8 & -- & $0.13$ & -- \\
+PK 8-comp ($d_\theta{=}20$, $T{=}5$)
+  & 1 & -- & $0.16$ & -- \\
+  & 5 & -- & $0.15$ & -- \\
+Src.\ loc.\ $p{=}8$ ($d_\theta{=}16$)$^\ddagger$
+  & 1 & -- & $0.17$ & -- \\
+  & 15 & -- & $0.16$ & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -336,27 +415,39 @@ PK 8-comp & 5 & $0.15$ & -- \\
 
 Table~\ref{tab:walltime} compares the one-time training cost and the per-step
 deployment cost. PACE trains its posterior estimator once in $3.6$ to $12.8$ minutes
-and then selects each design in under four seconds on eleven of twelve systems.
-Policy training ranges from minutes to sixteen hours and is infeasible on the
-stiffest systems.
+and then selects each design in under four seconds on eleven of twelve systems (ASM1,
+a stiff $13$-state ODE, is the exception at $40.5$\,s). Policy training ranges from
+minutes to sixteen hours and is infeasible on the stiffest systems.
+
+\paragraph{Hardware.} All Snellius runs use a single NVIDIA A100-SXM4-40GB on the
+\texttt{gpu\_a100} partition; this covers every PACE per-step measurement, all DAD
+training, and all NPE training except ASM1 and source-location, whose NPEs were trained
+on a local desktop GPU (marked $\dagger$; an A100 would be faster, which only
+strengthens the comparison). Drawing $J{=}1000$ particles from a trained NPE takes
+about $11$\,ms, negligible against the ODE-solve cost.
 
 \begin{table}[h]
 \centering\small
 \caption[Wall-clock cost]{Per-step design time, one-time NPE training, and one-time
-policy training. A dagger marks a local-GPU measurement; an asterisk marks unstable
-policy training (diverged before convergence).}
+policy training, with the experiment timescale for context. A dagger marks a local-GPU
+measurement; an asterisk marks unstable DAD training (CES diverged to NaN before
+convergence; the reported time is a partial run).}
 \label{tab:walltime}
-\begin{tabular}{lrrrl}
+\begin{tabular}{lrrrll}
 \toprule
-System & $T$ & PACE/step & NPE train & DAD train \\
+System & $T$ & PACE/step & NPE train & DAD train & Expt.\ timescale \\
 \midrule
-CES & 10 & $0.09$\,s & $3.7$\,min & $9$\,min$^*$ \\
-ASM1 & 5 & $40.5$\,s & $12.8$\,min$^\dagger$ & infeasible \\
-SEIR R=3 & 10 & ${\sim}1$\,s & $3.6$\,min & $9$\,min (useless) \\
-Monod & 14 & $0.22$\,s & $7.2$\,min & $16$\,hr \\
-Goodwin & 10 & $0.16$\,s & $5.1$\,min & failed \\
-PK 8-comp & 5 & $0.34$\,s & $9.6$--$11$\,min & $31$\,min \\
-PI3K & 8 & $3.34$\,s & $8$--$9$\,min & $3.2$\,hr \\
+CES & 10 & $0.09$\,s & $3.7$\,min & $9$\,min$^*$ & minutes \\
+ASM1 & 5 & $40.5$\,s & $12.8$\,min$^\dagger$ & infeasible & hours \\
+SEIR R=3 & 10 & ${\sim}1$\,s & $3.6$\,min & $9$\,min (useless) & days--weeks \\
+Monod & 14 & $0.22$\,s & $7.2$\,min & $16$\,hr & hours \\
+Goodwin & 10 & $0.16$\,s & $5.1$\,min & failed & -- \\
+Src.\ loc.\ $p{=}2$ & 10 & $0.13$\,s & $3$--$12$\,min$^\dagger$ & $20$\,min & -- \\
+Src.\ loc.\ $p{=}5$ & 30 & $0.15$\,s & $3$--$12$\,min$^\dagger$ & $1.5$\,hr & -- \\
+Src.\ loc.\ $p{=}8$ & 30 & $0.16$\,s & $3$--$12$\,min$^\dagger$ & $1.5$\,hr & -- \\
+PK 1-comp & 5 & $1.21$\,s & $8.5$--$9$\,min & $7$\,min & hours \\
+PK 8-comp & 5 & $0.34$\,s & $9.6$--$11$\,min & $31$\,min & hours \\
+PI3K & 8 & $3.34$\,s & $8$--$9$\,min & $3.2$\,hr & hours \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -364,88 +455,207 @@ PI3K & 8 & $3.34$\,s & $8$--$9$\,min & $3.2$\,hr \\
 \chapter{System specifications}
 \label{app:systems}
 
-Every system used in the thesis is defined here. Forward models, parameters,
-priors, and noise are taken from the implementation; per-method experiment
-configurations (horizon $T$, particle count $J$, candidates $N_{\mathrm{cand}}$,
-rounds $C$, evaluation budget $L_{\mathrm{eval}}$) are in Table~\ref{tab:config}.
-Information is in nats throughout.
+Every system used in the thesis is defined here, one section each, in a common format:
+the forward model and its constants, the prior, and the observation and design spaces.
+Forward models, parameters, priors, and noise are taken from the implementation;
+per-method experiment configurations (horizon $T$, particle count $J$, candidates
+$N_{\mathrm{cand}}$, CEM rounds $C$, evaluation budget $L_{\mathrm{eval}}$) are collected
+in Table~\ref{tab:config}. Dynamic systems are integrated with an explicit (Tsit5)
+solver, except where stiffness is noted. Throughout, $\mathcal N$ denotes a normal
+distribution and $\mathrm{LogNormal}(\log m,\sigma^2)$ a variable whose natural log is
+$\mathcal N(\log m,\sigma^2)$.
 
-\section{Static models}
+\section{CES (constant elasticity of substitution)}
+\textbf{Forward model.} A static utility-comparison model~\citep{foster2021deep,blau2022optimizing}.
+A design $\xi=(\xi^{(1)},\xi^{(2)})\in[0.01,100]^3\times[0.01,100]^3$ presents two
+commodity bundles. With parameters $\theta=(\rho,\alpha_1,\alpha_2,\log u)$ the
+CES utility of a bundle $x$ is $U(x)=\big(\sum_{i=1}^3\alpha_i x_i^{\rho}\big)^{1/\rho}$,
+and the response is the censored sigmoid-normal
+\[
+y=\sigma(\eta),\quad \eta\sim\mathcal N(\mu_\eta,\sigma_\eta^2),\quad
+\mu_\eta=u\big(U(\xi^{(1)})-U(\xi^{(2)})\big),\quad
+\sigma_\eta=u\,\sigma_0\big(1+\|\xi^{(1)}-\xi^{(2)}\|_2\big),
+\]
+with base noise $\sigma_0=0.005$ and $y$ censored to $[\epsilon,1-\epsilon]$,
+$\epsilon=2^{-22}$.
+\textbf{Prior.} $\rho\sim\mathrm{Beta}(1,1)=\mathrm{Uniform}(0,1)$ for elasticity,
+$(\alpha_1,\alpha_2,\alpha_3)\sim\mathrm{Dirichlet}(1,1,1)$ for the simplex weights
+($\alpha_3=1-\alpha_1-\alpha_2$), and $\log u\sim\mathcal N(1,3^2)$ for the scale;
+$d_\theta=4$.
+\textbf{Observation and design.} $d_y=1$, $d_\xi=6$. The censored boundary mass at
+$0$ and $1$ is what destabilises policy training on this system.
 
-\paragraph{CES utility ($d_\theta{=}4$, $d_\xi{=}6$, $d_y{=}1$).}
-A constant-elasticity-of-substitution utility comparison~\citep{foster2021deep,blau2022optimizing}.
-Parameters are an elasticity $\rho\in[0.01,1]$, two aggregation weights on the
-simplex, and a log scale; the unconstrained prior is roughly standard normal per
-coordinate. For a design $(d_1,d_2)\in[0.01,100]^3{\times}[0.01,100]^3$ the mean is
-$u\,[\,\mathrm{CES}(d_1)-\mathrm{CES}(d_2)\,]$ with
-$\mathrm{CES}(d)=(\sum_i\alpha_i d_i^{\rho})^{1/\rho}$, and the observation is this
-mean passed through a censored sigmoid-normal noise model. The censored boundary mass
-makes policy training unstable.
+\section{Source location}
+\textbf{Forward model.} $K=2$ point sources at locations $\theta=(\theta_1,\dots,\theta_K)$,
+$\theta_k\in\mathbb{R}^p$~\citep{foster2021deep}. A sensor at design $\xi\in[-3,3]^p$
+reads the log total signal
+\[
+G(\xi,\theta)=\log\!\Big(\gamma+\sum_{k=1}^{K}\frac{1}{\sigma_s^2+\|\xi-\theta_k\|_2^2}\Big),
+\qquad y=G(\xi,\theta)+\varepsilon,\quad \varepsilon\sim\mathcal N(0,0.5^2),
+\]
+with baseline $\gamma=0.1$ and source bandwidth $\sigma_s^2=10^{-4}$. A multi-resolution
+variant returns $d_y=3$ channels at bandwidths $\sigma_s^2\in\{0.001,0.1,1.0\}$.
+\textbf{Prior.} $\theta_k\sim\mathcal N(0,I_p)$, with the sources ordered by radial
+distance $\|\theta_1\|\le\dots\le\|\theta_K\|$ to break label-switching symmetry; this
+gives $d_\theta=Kp=2p$.
+\textbf{Observation and design.} $d_\xi=p$, with $p\in\{2,5,8\}$ (so $d_\theta\in\{4,10,16\}$).
 
-\paragraph{Source location ($d_\theta{=}2p$, $d_\xi{=}p$).}
-$K{=}2$ point sources in $\mathbb{R}^p$ with locations $\theta\sim\mathcal N(0,I)$,
-ordered by radius to break label switching. A sensor at $\xi\in[-3,3]^p$ reads
-$\log(0.1+\sum_k 1/(\sigma^2+\|\xi-\theta_k\|^2))$ with Gaussian noise of scale
-$0.5$; a multi-resolution variant returns three channels at scales
-$\sigma^2\in\{0.001,0.1,1.0\}$. We use $p\in\{2,5,8\}$.
+\section{Pharmacokinetics: one compartment}
+\textbf{Forward model.} The iDAD one-compartment model~\citep{ivanova2021implicit}. With
+$\theta=(k_a,k_e,V)$ (absorption rate, elimination rate, volume of distribution) the
+plasma concentration at sampling time $\xi\in[0,24]$\,h after a dose $D=400$\,mg is the
+closed form
+\[
+C(\xi,\theta)=\frac{D}{V}\,\frac{k_a}{k_a-k_e}\big(e^{-k_e\xi}-e^{-k_a\xi}\big),
+\qquad y\sim\mathcal N\!\big(C,\,\sigma^2(\xi,\theta)\big),\quad
+\sigma^2=(0.1\,C)^2+0.316^2,
+\]
+a heteroscedastic noise with $10\%$ relative and $\sqrt{0.1}$ absolute components.
+\textbf{Prior.} $\log\theta\sim\mathcal N\big((\log 1.0,\log 0.1,\log 20.0),\,0.05\,I_3\big)$.
+\textbf{Observation and design.} $d_y=1$, $d_\xi=1$. The forward map exposes three
+kinetic parameters; the results tables report $d_\theta=4$, a discrepancy to reconcile
+(it counts an additional inferred scale).% TODO(verify PK 1-comp parameter count vs tab:config)
 
-\paragraph{PK 1-compartment ($d_\theta{=}4$, $d_\xi{=}1$, $d_y{=}1$).}
-The pharmacokinetic model of \citet{ivanova2021implicit}. The implemented forward
-map is the closed form $C(\xi,\theta)=(D/V)(k_a/(k_a-k_e))(e^{-k_e\xi}-e^{-k_a\xi})$
-with dose $D{=}400$, log-normal priors on $(k_a,k_e,V)$, sampling time
-$\xi\in[0,24]$, and heteroscedastic Gaussian noise. The paper reports
-$d_\theta{=}4$; the implementation exposes three kinetic parameters, so the fourth
-should be reconciled when finalising this section.\,% TODO(verify PK 1-comp parameter count vs tab:config)
+\section{Pharmacokinetics: eight-compartment PBPK}
+\textbf{Forward model.} A permeability-limited physiologically based model with seven
+tissues, central blood, and an oral depot ($16$ internal states). The state vector is
+$(M_{\mathrm{depot}},C_{\mathrm{blood}},\{C_{\mathrm{vas},i},C_{\mathrm{tis},i}\}_{i=1}^7)$,
+governed by the linear system
+\begin{align*}
+\dot M_{\mathrm{depot}} &= -k_a M_{\mathrm{depot}},\\
+\dot C_{\mathrm{blood}} &= \big(\textstyle\sum_i Q_i(C_{\mathrm{vas},i}-C_{\mathrm{blood}})+k_a F M_{\mathrm{depot}}-\mathrm{CL}_r f_{up}C_{\mathrm{blood}}\big)/V_{\mathrm{blood}},\\
+\dot C_{\mathrm{vas},i} &= \big(Q_i(C_{\mathrm{blood}}-C_{\mathrm{vas},i})-\mathrm{PS}_i(f_{up}C_{\mathrm{vas},i}-C_{\mathrm{tis},i}/K_{p,i})\big)/V_{\mathrm{vas},i},\\
+\dot C_{\mathrm{tis},i} &= \big(\mathrm{PS}_i(f_{up}C_{\mathrm{vas},i}-C_{\mathrm{tis},i}/K_{p,i})-(\mathrm{CL}_h\delta_{\mathrm{liver}}+\mathrm{CL}_{\mathrm{gut}}\delta_{\mathrm{gut}})\,C_{\mathrm{tis},i}/K_{p,i}\big)/V_{\mathrm{tis},i},
+\end{align*}
+which is solved in closed form by the matrix exponential $y(t)=\exp(A(\theta)t)\,y_0$.
+Physiological constants are fixed at $70$-kg adult values (blood $V_{\mathrm{blood}}=5.6$\,L;
+tissue volumes, vascular fractions, and flows $Q_i$ summing to a $390$\,L/h cardiac
+output). Dosing is a $100$\,mg IV bolus to blood plus a $100$\,mg oral dose to the depot.
+\textbf{Prior.} The $d_\theta=20$ parameters are seven partition coefficients
+$K_{p,i}\sim\mathrm{LogNormal}(\log 2,0.3^2)$, seven permeabilities
+$\mathrm{PS}_i\sim\mathrm{LogNormal}(\log 50,0.5^2)$, hepatic/renal/gut clearances
+$\mathrm{CL}_h\sim\mathrm{LogNormal}(\log 20,0.4^2)$,
+$\mathrm{CL}_r\sim\mathrm{LogNormal}(\log 10,0.5^2)$,
+$\mathrm{CL}_{\mathrm{gut}}\sim\mathrm{LogNormal}(\log 5,0.5^2)$, absorption
+$k_a\sim\mathrm{LogNormal}(\log 1.5,0.4^2)$, and bioavailability $F$ and unbound
+fraction $f_{up}$, each $\mathrm{sigmoid}(\mathcal N(0,1^2))$. These calibrated, tight
+priors give the system its small escape threshold despite $d_\theta=20$.
+\textbf{Observation and design.} $d_y=1$ (plasma $C_{\mathrm{blood}}$) at sampling time
+$\xi\in[0,24]$\,h, with heteroscedastic noise $\sigma^2=(0.1\,C)^2+0.1$.
 
-\section{Pharmacokinetics, signalling, and bioreactors}
+\section{PI3K signalling}
+\textbf{Forward model.} A four-state model of iRap-induced PIP3
+signalling~\citep{liang2024structural} with states
+$(y_1,y_2,y_3,y_4)=(\text{irap\_p85},\text{lyn\_irap\_p85},\text{pip3},\text{yfp\_ph\_mem})$
+and conservation laws $\text{cfp\_fkbp\_p85}=1-y_1-y_2$, $\text{lyn\_frb}=1-y_2$,
+$\text{yfp\_ph\_cyt}=1-y_4$. With designs $u_{\mathrm{iRap}},u_{\mathrm{LY29}}$ the fluxes are
+$v_{\mathrm{dimer}}=k_r\,\text{cfp\_fkbp\_p85}\,u_{\mathrm{iRap}}$,
+$v_{\mathrm{trimer}}=k_t\,\text{lyn\_frb}\,y_1$,
+$v_{\mathrm{pi3k}}=y_2/(1+u_{\mathrm{LY29}}/k_{ly})$, $v_{\mathrm{deg}}=\phi\,y_3$,
+$v_{\mathrm{ph}}=k_a\,\text{yfp\_ph\_cyt}\,y_3-\alpha\,y_4$, and
+$\dot y_1=v_{\mathrm{dimer}}-v_{\mathrm{trimer}}$, $\dot y_2=v_{\mathrm{trimer}}$,
+$\dot y_3=v_{\mathrm{pi3k}}-v_{\mathrm{deg}}$, $\dot y_4=v_{\mathrm{ph}}$, from $y(0)=0$.
+\textbf{Prior.} The six parameters $\theta=(k_r,k_t,k_{ly},\phi,k_a,\alpha)$ are
+log-normal about the best-fit values $(1.56,0.03,0.16,1.80,0.58,0.11)$ with log-scale
+$\sigma=0.5$.
+\textbf{Observation and design.} $d_y=2$, the cytosolic readouts
+$(\text{cfp\_fkbp\_p85},\text{yfp\_ph\_cyt})$, with $\mathcal N(0,0.02^2)$ noise; designs
+$u_{\mathrm{iRap}}\in[0,1]$ and $u_{\mathrm{LY29}}\in[0,25]$.
 
-\paragraph{PK 8-compartment ($d_\theta{=}20$, $d_\xi{=}1$, $d_y{=}1$).}
-A permeability-limited physiologically based model with seven tissues plus blood and
-a depot, solved in closed form by a matrix exponential of the linear generator. The
-twenty parameters are seven partition coefficients, seven permeabilities, hepatic,
-renal, and gut clearances, an absorption rate, bioavailability, and unbound
-fraction, with log or logit priors. Tight, calibrated priors give it the smallest
-escape threshold despite its dimension. Observation is plasma concentration at a
-sampling time $\xi\in[0,24]$ with heteroscedastic noise.
+\section{Monod and Haldane bioreactors}
+\textbf{Forward model.} Fed-batch bioreactors~\citep{monod1949growth,strouwen2026deep}
+with state $(C_s,C_x,V)$ (substrate, biomass, volume), feed rate $\xi=Q_{\mathrm{in}}\in[0,6]$,
+yield $Y_{xs}=0.777$, feed concentration $C_{s,\mathrm{in}}=50$, and
+$\dot C_s=-\mu C_x/Y_{xs}+Q_{\mathrm{in}}(C_{s,\mathrm{in}}-C_s)/V$,
+$\dot C_x=\mu C_x-Q_{\mathrm{in}}C_x/V$, $\dot V=Q_{\mathrm{in}}$, from $(3,0.3,7)$.
+Monod growth is $\mu=\mu_{\max}C_s/(K_s+C_s)$; the Haldane variant adds substrate
+inhibition, $\mu=\mu_{\max}C_s/(K_s+C_s+\alpha C_s^2)$.
+\textbf{Prior.} Monod ($d_\theta=2$): $\mu_{\max}\sim\mathrm{Uniform}(0.3,0.5)$,
+$K_s\sim\mathrm{Uniform}(0.3,0.6)$. Haldane ($d_\theta=1$): $\alpha\sim\mathrm{Uniform}(0,0.15)$
+with $\mu_{\max}=0.4$, $K_s=0.45$ fixed.
+\textbf{Observation and design.} $d_y=1$ (substrate $C_s$), $\mathcal N(0,0.1^2)$ noise;
+$d_\xi=1$. Haldane appears only in the saturation survey.
 
-\paragraph{PI3K signalling ($d_\theta{=}6$, $d_\xi{=}2$, $d_y{=}2$).}
-A four-state model of iRap-induced PIP3 signalling~\citep{liang2024structural}. The
-six rate parameters have log-normal priors. Designs are the input concentrations
-iRap$\in[0,1]$ and the inhibitor LY29$\in[0,25]$. The observations are two
-fluorescence readouts with Gaussian noise. The dynamics are moderately stiff.
+\section{DC motor}
+\textbf{Forward model.} A two-state electromechanical system (current $i$, angular
+velocity $\omega$)~\citep{strouwen2026deep}, used only in the saturation survey:
+$\dot i=(V_{\mathrm{in}}-R\,i-k\,\omega)/L_a$, $\dot\omega=(k\,i-f\,\omega)/J_m$, from
+$(0,0)$, with $R=0.5$, $L_a=0.0045$, friction $f=0.0125$ fixed and voltage design
+$V_{\mathrm{in}}\in[0,10]$.
+\textbf{Prior.} $d_\theta=2$: $k\sim\mathrm{Uniform}(0.3,0.7)$,
+$J_m\sim\mathrm{Uniform}(0.01,0.04)$.
+\textbf{Observation.} $d_y=1$ ($\omega$), $\mathcal N(0,1^2)$ noise.
 
-\paragraph{Monod and related bioreactors ($d_\theta{\le}2$, $d_\xi{=}1$, $d_y{=}1$).}
-Fed-batch bioreactor models~\citep{monod1949growth,strouwen2026deep}. Monod has two
-parameters $(\mu_{\max},K_s)$ with uniform priors; the state is substrate, biomass,
-and volume, with growth $\mu=\mu_{\max}C_s/(K_s+C_s)$ and feed rate $\xi\in[0,6]$;
-substrate is observed with Gaussian noise. The Haldane variant adds substrate
-inhibition through one extra parameter, and the DC motor is a two-state, two-parameter
-electromechanical system used only in the saturation survey.
+\section{Goodwin oscillator}
+\textbf{Forward model.} A three-state negative-feedback oscillator~\citep{strouwen2026deep}
+with mRNA, protein, and product $(X,Y,Z)$ and a high-cooperativity Hill repression,
+$\dot X=V_s K^n/(K^n+Z^n)-k_d X+u$, $\dot Y=k_t X-k_d Y$, $\dot Z=k_t Y-k_d Z$, from
+$(0.1,0.1,0.1)$, with transcriptional input design $u\in[0,1]$.
+\textbf{Prior.} $d_\theta=5$: $V_s,K,k_d,k_t$ log-normal about $(0.5,1.0,0.1,1.0)$ with
+log-scale $\sigma=0.4$, and the Hill exponent $n\sim\mathcal N(12,1.5^2)$ truncated to
+$n>7$. The high $n$ creates the identifiability plateau that makes Goodwin a predicted
+counter-case.
+\textbf{Observation and design.} $d_y=1$ ($X$), $\mathcal N(0,0.05^2)$ noise; $d_\xi=1$.
 
-\section{Stiff and oscillatory ODE systems}
+\section{Repressilator}
+\textbf{Forward model.} A six-state synthetic oscillator (three mRNAs $m_{1:3}$, three
+proteins $P_{1:3}$) in cyclic repression, used only in the saturation survey:
+$\dot m_i=\gamma-\delta m_i+\alpha K^n/(P_{j(i)}^n+K^n)+u\,[i{=}1]$ and
+$\dot P_i=\beta m_i-\mu P_i$, with $P_{j(1)}=P_3,P_{j(2)}=P_1,P_{j(3)}=P_2$, fixed mRNA
+decay $\delta=0.0025$, and inducer design $u\in[0,0.5]$ on gene~1.
+\textbf{Prior.} $d_\theta=6$: $\alpha,K,\beta,\gamma,\mu$ log-normal about
+$(0.5,40,0.05,0.005,0.005)$, and $n\sim\mathcal N(2,0.5^2)$ truncated to $n>1.5$.
+\textbf{Observation.} $d_y=1$ ($P_1$), $\mathcal N(0,5^2)$ noise.
 
-\paragraph{Goodwin oscillator ($d_\theta{=}5$, $d_\xi{=}1$, $d_y{=}1$).}
-A three-state negative-feedback oscillator with a Hill repression term of high
-cooperativity $n\approx 12$. Parameters have log-normal priors except $n$, which is
-a truncated normal constrained to give oscillation. The high Hill exponent creates an
-identifiability plateau, which is why it is a predicted counter-case. The
-Repressilator is a related six-state oscillator used only in the saturation survey.
+\section{ASM1 wastewater}
+\textbf{Forward model.} Activated Sludge Model No.\ 1~\citep{henze2000activated}, a
+stiff $13$-state ODE solved with an implicit integrator. The state is
+$(S_I,S_S,X_I,X_S,X_{BH},X_{BA},X_P,S_O,S_{NO},S_{NH},S_{ND},X_{ND},S_{ALK})$, driven by
+eight processes
+\begin{align*}
+\rho_0 &= \mu_H\tfrac{S_S}{K_S+S_S}\tfrac{S_O}{K_{OH}+S_O}X_{BH}, &
+\rho_1 &= \mu_H\tfrac{S_S}{K_S+S_S}\tfrac{K_{OH}}{K_{OH}+S_O}\tfrac{S_{NO}}{K_{NO}+S_{NO}}\eta_g X_{BH},\\
+\rho_2 &= \mu_A\tfrac{S_{NH}}{K_{NH}+S_{NH}}\tfrac{S_O}{K_{OA}+S_O}X_{BA}, &
+\rho_3 &= b_H X_{BH},\quad \rho_4=b_A X_{BA},\quad \rho_5=k_a S_{ND}X_{BH},\\
+\rho_6 &= k_h\tfrac{X_S/X_{BH}}{K_X+X_S/X_{BH}}\big(\tfrac{S_O}{K_{OH}+S_O}+\eta_h\tfrac{K_{OH}}{K_{OH}+S_O}\tfrac{S_{NO}}{K_{NO}+S_{NO}}\big)X_{BH}, &
+\rho_7 &= \rho_6\,X_{ND}/X_S,
+\end{align*}
+combined through the standard ASM1 Petersen stoichiometry into the $13$ state
+derivatives (with a continuous-flow term $Q/V=4\,\mathrm{d}^{-1}$, oxygen transfer
+$k_La(S_{O,\mathrm{sat}}-S_O)$, $S_{O,\mathrm{sat}}=8$, and waste term $Q_w$ on the
+particulates). Fixed coefficients are $Y_A=0.24$, $F_P=0.08$, $i_{XB}=0.086$,
+$i_{XP}=0.06$, $K_{NO}=0.5$, $K_{OA}=0.4$, $\eta_h=0.4$, with fixed influent
+concentrations.
+\textbf{Prior.} The $d_\theta=12$ kinetic parameters are log-normal about their BSM1
+nominal values: $\mu_H\,(6.0)$, $K_S\,(20)$, $K_{OH}\,(0.2)$, $\mu_A\,(0.8)$,
+$K_{NH}\,(1.0)$, $b_H\,(0.62)$, $b_A\,(0.15)$, $\eta_g\,(0.8)$, $k_h\,(3.0)$,
+$K_X\,(0.03)$, $k_a\,(0.08)$, and yield $Y_H\,(0.67)$, with log-scale $\sigma$ between
+$0.19$ and $0.62$ per parameter.
+\textbf{Observation and design.} $d_y=4$, the effluent quality variables
+$(S_S,S_{NH},S_{NO},S_O)$ with heteroscedastic noise
+$\sigma=\sqrt{(0.05\,y)^2+0.5^2}$; designs are the aeration rate $k_La\in[10,300]$ and
+the waste-sludge fraction $Q_w\in[0.01,0.2]$. The stiffness and the resulting adjoint
+cost are what make policy training infeasible here.
 
-\paragraph{ASM1 wastewater ($d_\theta{=}12$, $d_\xi{=}2$, $d_y{=}4$).}
-Activated Sludge Model No.\ 1~\citep{henze2000activated}, a thirteen-state stiff ODE
-with an eight-process rate structure. Twelve kinetic parameters have log-normal
-priors. The two designs are the aeration rate $k_La\in[10,300]$ and the waste sludge
-fraction $Q_w\in[0.01,0.2]$. Four effluent quality variables are observed with
-heteroscedastic noise. The stiffness and the adjoint cost make policy training
-infeasible.
-
-\paragraph{Multi-region SEIR ($d_\theta{=}6{+}R$, $d_\xi{=}3R$, $d_y{=}2R$).}
-$R$ coupled regions, each with susceptible, exposed, infected, and recovered
-compartments, sharing incubation, recovery, and coupling rates and three
-intervention efficacies, with per-region transmission rates. Shared rates have
-log-normal priors and efficacies have Beta priors. The three per-region designs are
-vaccination, distancing, and treatment intensities. Exposed and infected counts are
-observed with lognormal noise. We use $R{=}3$ as the main system; $R{=}5$ and $R{=}8$
+\section{Multi-region SEIR}
+\textbf{Forward model.} $R$ coupled regions, each with $(S_r,E_r,I_r,R_r)$ and
+population $N=10^4$. With total infection $\textstyle\sum_r I_r$ and cross-region
+pressure $\mathrm{cross}_r=\kappa(\sum_{r'}I_{r'}-I_r)$, and per-region designs
+$(v_r,d_r,\tau_r)$ (vaccination, distancing, treatment),
+\begin{align*}
+\dot S_r &= -\beta_r(1-\varepsilon_d d_r)S_r(I_r+\mathrm{cross}_r)/N-v_r\varepsilon_v S_r, &
+\dot E_r &= \beta_r(1-\varepsilon_d d_r)S_r(I_r+\mathrm{cross}_r)/N-\sigma E_r,\\
+\dot I_r &= \sigma E_r-\gamma I_r-\tau_r\varepsilon_t I_r, &
+\dot R_r &= \gamma I_r+\tau_r\varepsilon_t I_r+v_r\varepsilon_v S_r,
+\end{align*}
+from $S_r(0)=N-I_0$, $I_r(0)=I_0=10$, $E_r(0)=R_r(0)=0$.
+\textbf{Prior.} $d_\theta=6+R$: shared $\sigma\sim\mathrm{LogNormal}(\log 0.2,0.3^2)$,
+$\gamma\sim\mathrm{LogNormal}(\log 0.1,0.3^2)$, $\kappa\sim\mathrm{LogNormal}(\log 0.05,0.5^2)$;
+per-region $\beta_r\sim\mathrm{LogNormal}(\log 0.4,0.5^2)$; and efficacies
+$\varepsilon_v,\varepsilon_d,\varepsilon_t\sim\mathrm{Beta}(2,2)$.
+\textbf{Observation and design.} $d_y=2R$ (exposed and infected per region) with
+lognormal noise of scale $0.15$; $d_\xi=3R$ with $v_r\in[0,0.05]$, $d_r\in[0,1]$,
+$\tau_r\in[0,0.5]$. We use $R=3$ as the main system ($d_\theta=9$); $R=5$ and $R=8$
 appear in the saturation survey.
 
 \begin{table}[h]
@@ -476,6 +686,24 @@ PI3K & 6 & 2 & 8 & CEM & 1000 & 1000 & 1 & $10^5$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Baseline policy (DAD) configuration}
+The DAD baseline follows \citet{foster2021deep}: a permutation-invariant history encoder
+(a shared per-step MLP applied to each $(\xi_i,y_i)$ pair, sum-pooled across steps)
+feeding a design-emitter MLP that outputs the next design. It is trained by Adam
+stochastic gradient ascent on the trajectory sPCE bound (Eq.~\eqref{eq:traj-spce}) with
+$L_{\mathrm{train}}$ prior contrastives, $L_{\mathrm{train}}=1000$ for all systems except
+CES ($1024$), with per-system gradient-step budgets of $3{,}000$ to $50{,}000$ and batch
+sizes of $8$ to $128$; the resulting training times are in Table~\ref{tab:walltime}. For
+SEIR R=3, $L_{\mathrm{train}}$ is additionally swept over
+$\{10^2,10^3,10^4,5{\times}10^4,10^5\}$ (Table~\ref{tab:dad-sweep}). DAD is evaluated on
+the same $\theta_{\mathrm{true}}$ seeds and at the same $L_{\mathrm{eval}}$ as PACE. On
+CES, training diverges to NaN before convergence (the censored-likelihood instability
+also reported by \citet{hedman2025stepdad}), and the reported result uses the best
+checkpoint before divergence; on ASM1, and on SEIR R=3 at the budget needed to escape
+saturation, training is infeasible (stiff-ODE adjoint with
+$L_{\mathrm{escape},50}$ beyond any feasible $L_{\mathrm{train}}$;
+Section~\ref{sec:m-forward}).
 
 \chapter{Neural posterior estimator}
 \label{app:npe}
