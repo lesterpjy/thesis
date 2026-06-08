@@ -138,18 +138,16 @@ a fundamental one. \citet{klein2026supercharging} showed that a multiple-restart
 through a \emph{differentiable} simulator lets an online per-trajectory method match or exceed the
 policy, though the demonstration is narrow: it uses hundreds of optimisation restarts on smooth,
 low-dimensional benchmarks, and its own results show the advantage concentrated in the lowest
-dimension and shrinking as the dimension grows. It also depends on simulator gradients, which on
-stiff ODE systems require an adjoint pass that is expensive, numerically delicate, or
+dimension and shrinking as the dimension grows. It also needs gradients through the simulator, and
+on stiff ODE systems those gradients are expensive, numerically delicate, or
 unavailable~\citep{kim2024stiff,pal2023neural}. The promise of per-trajectory design is real, but
-as pursued so far it is confined to small, differentiable problems at a high optimisation cost.
+so far it holds only on small, differentiable problems and at high cost.
 
 The gap is a per-trajectory method that needs neither a trained policy nor simulator gradients: it
-uses the current posterior, like the per-trajectory family, but scores designs by forward
-simulation alone. Such a method would exceed the amortized policy with far less computation than the
-gradient-based route, and on the stiff, saturated systems where policy training is infeasible it
-would be the only feasible choice, reversing the relationship found on the standard benchmarks. The
-remaining difficulty is to stay usable when the posterior is so concentrated that its importance
-weights collapse.
+uses the current posterior but scores candidate designs by forward simulation alone. Such a method
+would beat the amortized policy with far less computation than the gradient-based route, and on the
+stiff, saturated systems where policy training is infeasible it would be the only feasible choice,
+reversing the relationship found on the standard benchmarks.
 
 \begin{figure}[t]
   \centering
