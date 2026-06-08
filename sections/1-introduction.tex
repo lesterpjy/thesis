@@ -133,8 +133,7 @@ or optimiser, so every method trained on it inherits the failure, including the
 reinforcement-learning variants.
 
 The second reason is that the premise that per-trajectory design is inherently weaker than a
-trained policy does not hold; its earlier underperformance was an optimisation failure rather than
-a fundamental one. \citet{klein2026supercharging} showed that a multiple-restart gradient ascent
+trained policy does not hold. \citet{klein2026supercharging} showed that a multiple-restart gradient ascent
 through a \emph{differentiable} simulator lets an online per-trajectory method match or exceed the
 policy, though the demonstration is narrow: it uses hundreds of optimisation restarts on smooth,
 low-dimensional benchmarks, and its own results show the advantage concentrated in the lowest
