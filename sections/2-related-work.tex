@@ -152,10 +152,13 @@ bound on mutual information, and such bounds cannot exceed $\log(L+1)$ nats for 
 contrastives~\citep{mcallester2020formal,paninski2005asymptotic}: the denominator of
 Eq.~\eqref{eq:rw-pce} is at least $\frac{1}{L+1}p(y\mid\theta_0,\xi)$, so the ratio is at
 most $L+1$. The InfoNCE form makes the same ceiling explicit as a classification bound over
-$L{+}1$ candidates~\citep{oord2018representation,poole2019variational}. This ceiling is the
-starting point of the saturation analysis in Chapter~\ref{sec:methodology}: it is a
-property of the objective, not of any network or optimiser, so every method trained on it
-inherits the failure we diagnose.
+$L{+}1$ candidates~\citep{oord2018representation,poole2019variational}. The ceiling is one face
+of a more general limitation: \citet{song2020understanding} show that the variance of
+variational mutual-information estimators grows with the true information, so estimating a large
+information gain accurately is hard for the whole class, not only at the bound. This ceiling is
+the starting point of the saturation analysis in Chapter~\ref{sec:methodology}: it is a property
+of the objective, not of any network or optimiser, so every method trained on it inherits the
+failure we diagnose.
 
 \subsection{Sequential amortization: DAD, iDAD, and the learned-proposal bounds}
 \label{sec:rw-dad}
@@ -281,7 +284,7 @@ adaptive model discrimination by \citet{cavagnaro2010adaptive}; PACE recovers th
 discriminative criterion automatically as the effective sample size collapses, rather than
 by design.
 
-\section{Differentiating through stiff simulators}
+\section{Stiff dynamical systems: inference, identifiability, and design}
 \label{sec:rw-stiff}
 
 Gradient-based design optimisation, and policy training by the sPCE objective, both
@@ -296,6 +299,24 @@ avoids the adjoint entirely and applies to stiff and black-box simulators where
 gradient-based design is unstable or infeasible. It is also what separates PACE from the
 gradient-based per-trajectory methods of Section~\ref{sec:rw-pertraj}, which share its use
 of the posterior but not its avoidance of the adjoint.
+
+The difficulties this thesis confronts are individually familiar in the modelling of dynamical
+biochemical systems, and each has been addressed on its own terms. Stiffness and disparate
+timescales are the rule rather than the exception in these models, as the standard benchmark
+collections of intracellular-process models document~\citep{hass2019benchmark}, and the
+practical and structural non-identifiability of their parameters, the source of the broad prior,
+has been studied at
+length~\citep{villaverde2016structural,raue2009identifiability,gutenkunst2007universally}. The
+cost of stiff solvers has likewise been met head-on for the \emph{inference} problem: large
+biochemical models are routinely fitted by adjoint sensitivity analysis, which scales
+gradient-based parameter estimation to hundreds of states and
+parameters~\citep{froehlich2017scalable}. What that body of work addresses, however, is
+estimating parameters from data already collected, not designing the experiments that produce
+the data. Carrying the same adjoint machinery into sequential design meets the saturation
+obstacle of Section~\ref{sec:rw-policy}, which no advance in solver technology removes, because
+it is a property of the prior-contrastive objective and not of the solver. This is the gap PACE
+addresses: it keeps the forward simulator that a stiff model can always provide, and avoids both
+the adjoint and the saturating objective.
 
 \section{Summary and the gap}
 \label{sec:rw-gap}

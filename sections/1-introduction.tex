@@ -71,8 +71,8 @@ The second and third properties concern the parameters. Kinetic parameters in bi
 models are typically known only to within several orders of magnitude, and many remain only
 weakly constrained even by careful experiments, a pervasive feature of systems-biology models
 often described as parameter sloppiness or practical
-non-identifiability~\citep{gutenkunst2007universally,raue2009identifiability}. The prior is
-therefore broad. At the same time, because stiff dynamics respond sharply to these parameters,
+non-identifiability~\citep{gutenkunst2007universally,raue2009identifiability,villaverde2016structural}.
+The prior is therefore broad. At the same time, because stiff dynamics respond sharply to these parameters,
 a single well-timed measurement can rule out most of that broad prior at once, and so carry
 many nats of information. These two properties together are what break the contrastive
 estimators on which modern BED depends. Those estimators approximate the intractable marginal
@@ -81,7 +81,10 @@ broad and the observation is highly informative, almost every prior sample is in
 the data and contributes nothing to the average, and the information estimate stalls. We show
 that any such estimator built from $L$ prior samples is capped at $\log(L+1)$ nats, and that the
 number of samples needed to clear the cap grows exponentially with the information per
-experiment, so on these systems no feasible budget recovers a usable design signal.
+experiment. This is a sharp instance of a difficulty already known for variational
+mutual-information estimators, whose accuracy and variance degrade as the true information
+grows~\citep{mcallester2020formal,song2020understanding}, so on these systems no feasible budget
+recovers a usable design signal.
 
 These three properties are not independent difficulties that one might hope to meet one at a
 time. They are coupled and they co-occur. The same separation of timescales that makes a network
@@ -92,7 +95,8 @@ low-dimensional pharmacokinetic compartments, source localisation, and small ODE
 of these properties is mild or absent, which is why existing methods do well there. On the
 systems that motivate this work, and on genuinely interesting dynamical systems more generally,
 all three hold at once, and they are not artefacts to be engineered away but the normal
-condition of the problem. This is exactly the regime in which the two families of methods that
+condition of the problem, as the standard collections of biochemical ODE benchmark models
+attest~\citep{hass2019benchmark,villaverde2016structural}. This is exactly the regime in which the two families of methods that
 dominate modern sequential BED break down, each for a different reason. This thesis explains why
 they break down, and develops a method that does not.
 
