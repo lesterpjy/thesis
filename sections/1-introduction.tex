@@ -115,10 +115,9 @@ extensions to likelihood-free simulators~\citep{ivanova2021implicit}, deployment
 refinement~\citep{hedman2025stepdad}, and reinforcement-learning variants such as RL-BOED and
 variational sequential design~\citep{blau2022optimizing,shen2025vsoed}; these differ in how the
 policy is trained but share a contrastive, sPCE-style objective. The other approach is per-trajectory design, which
-optimises each design online against the current posterior instead of learning a reusable policy.
-Its recent instances obtain that posterior by simulation-based inference (SBI) and have been
-reported to reach a lower information gain than the trained
-policy~\citep{zaballa2025bridging,klein2026supercharging}.
+optimises each design online against the current posterior instead of learning a reusable policy,
+and which has generally been found to underperform the trained
+policy~\citep{ivanova2021implicit,zaballa2025bridging}.
 
 This thesis shows that the advantage of amortized policies does not hold on the stiff,
 broad-prior, high-information systems described above, for two reasons. The first concerns the
