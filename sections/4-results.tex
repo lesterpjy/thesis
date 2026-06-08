@@ -403,3 +403,44 @@ to the single-particle regime of CES and ASM1, which confirms the smooth interpo
 of Section~\ref{sec:m-cancellation}. Together these diagnostics support the central
 empirical claim of RQ3: PACE's design rankings are reliable even when its weights have
 collapsed.
+
+\section{Computational cost and the budget trade-off}
+\label{sec:r-budget}
+
+The cost transfer of Section~\ref{sec:m-pace} is the empirical counterpart of
+contribution~2: PACE moves the per-step contrastive cost of policy training onto a
+one-time inference pass plus a constant per-step search. This section collects the
+budget evidence.
+
+\paragraph{The two cost structures.} A policy trained on the sPCE objective pays, per
+gradient step, $L_{\mathrm{train}}$ forward-plus-backward simulator solves, and on
+saturated systems $L_{\mathrm{train}}$ must reach $L_{\mathrm{escape},50}$ before the
+gradient carries signal (Section~\ref{sec:m-saturation}); the training cost scales as
+$O(N_{\mathrm{iter}}\,L_{\mathrm{escape},50}\,T)$. PACE pays a one-time NPE training pass
+plus, per step, $J(1+M(1+C)N_{\mathrm{cand}})$ forward-only solves
+(Section~\ref{sec:m-forward}). The first grows exponentially with the information per
+experiment; the second does not.
+
+\paragraph{Measured costs.} Table~\ref{tab:walltime} reports the numbers. PACE's one-time
+NPE training takes $3.6$ to $12.8$ minutes across the suite, and generating that training
+data takes under a minute on the non-stiff systems and $5$ to $60$ minutes on the stiff
+ones. At deployment PACE selects each design in under four seconds on eleven of twelve
+systems, the exception being the stiff ASM1 model at $40.5$\,s. Policy training, by
+contrast, ranges from about seven minutes on the simplest systems to sixteen hours on
+Monod, is unstable on CES, and is infeasible on ASM1 and on SEIR R=3 at the budget needed
+to escape saturation. A deployed policy then emits designs in milliseconds, faster than
+PACE per step, but this latency gap is irrelevant for scientific experiments that take
+minutes to weeks to run; the decisive comparison is the one-time training cost.
+
+\paragraph{Budget versus quality.} Two results bound the trade-off. The cost-shift toy
+(Figure~\ref{fig:toy}) sets the lower end: PACE reaches the true EIG once its NPE is
+trained on only $500$ to $5000$ simulations, while the prior-contrastive estimator stays
+pinned regardless of budget. The DAD L-sweep (Table~\ref{tab:dad-sweep}) sets the other
+end: on SEIR R=3 the policy never escapes saturation across five orders of magnitude of
+$L_{\mathrm{train}}$, so no feasible policy budget buys a usable design. Together they
+make the cost transfer concrete: PACE's budget is bounded and paid once, whereas the
+policy's required budget is unbounded on exactly the systems where design matters most.
+% TODO(planned sweeps -- see PLANNED_EXPERIMENTS.md):
+% A1 real-anchor N_NPE sweep (CES/SEIR) -> figure generalising the toy phase transition;
+% A2 quality/cost vs particle count J; A3 quality vs CEM budget (N_cand, C).
+% Drop figures/tables and a sentence here once the runs are complete.

@@ -23,17 +23,14 @@ effective sample size, so the two methods are complementary rather than competin
 \section{Practical cost}
 \label{sec:d-cost}
 
-PACE shifts cost from a per-step policy-training budget to a one-time inference
-pass plus a modest per-step search. Training the neural posterior estimator takes
-between about $3.6$ and $12.8$ minutes once per system. At deployment, PACE selects
-each design in under four seconds on eleven of the twelve systems, the exception
-being the stiff ASM1 model at about forty seconds per step. By contrast, training a
-policy ranges from a few minutes on the simplest systems to about sixteen hours on
-Monod, and is unstable on CES and infeasible on ASM1 and on SEIR R=3 at the budget
-needed to escape saturation. A deployed policy then produces designs in
-milliseconds, which is faster than PACE per step, but this difference is irrelevant
-for scientific experiments that take minutes to weeks to run. The full timing table
-is in Appendix~\ref{app:walltime}.
+Section~\ref{sec:r-budget} quantifies the cost trade-off; we restate its practical
+upshot. PACE replaces a per-system policy-training budget that is unbounded on saturated
+systems with a one-time NPE pass of minutes and a per-step forward search of seconds. For
+scientific experiments that take minutes to weeks, the per-step latency gap against a
+deployed policy (seconds versus milliseconds) is immaterial, whereas the training-side
+gap (feasible versus infeasible on stiff, saturated systems) is decisive. This is the
+regime in which PACE is the practical choice; where the policy trains cheaply and is
+deployed at very high frequency, its amortized millisecond inference remains preferable.
 
 \section{Limitations}
 \label{sec:d-limits}

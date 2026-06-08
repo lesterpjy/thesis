@@ -38,4 +38,8 @@ mode. Future work that addresses these would combine the posterior-contrastive s
 with a learned proposal policy to recover scalability, use observation-conditional
 inner proposals to keep the effective sample size higher, extend the design rule
 beyond a greedy horizon, and test the method on the timed-input biochemical systems
-that motivated it.
+that motivated it. Because PACE relies on a frozen, one-time proposal, a further
+direction is to characterise its robustness under misspecification: under prior or
+observation-noise shift, and under a structural model gap of the kind the original
+motivation describes, where the trust diagnostics of Chapter~\ref{sec:results} should
+double as misspecification detectors.
