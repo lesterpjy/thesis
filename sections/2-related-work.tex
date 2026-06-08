@@ -248,15 +248,15 @@ ODEs, sequentially selecting informative conditions by active learning. These me
 PACE's use of the current posterior, which is what frees them from the $\log(L+1)$ ceiling
 that the prior-contrastive objective imposes on the policy family.
 
-Until recently this family was considered the weaker option. The consensus, set out in the
-modern review of \citet{rainforth2024modern} and in the comparisons of
-\citet{ivanova2021implicit}, was that amortized policies dominate online per-trajectory
-optimisation on both deployment speed and design quality, the latter because a learned policy is
-non-myopic and avoids the approximate per-step inference that online methods rely on.
+Until recently this family was found to be the weaker option. The review of
+\citet{rainforth2024modern} advocates amortized policies on both deployment speed and design
+quality, and empirical comparisons~\citep{ivanova2021implicit} reported that online per-trajectory
+optimisation underperforms a trained policy, the design-quality gap attributed to the policy being
+non-myopic and to its avoiding the approximate per-step inference that online methods rely on.
 \citet{klein2026supercharging} overturned part of this picture: with a multiple-restart gradient
 ascent that escapes the local optima of the non-convex EIG surface, an SBI-based per-trajectory
 method matches or exceeds the trained policy, which they read as evidence that the achievable
-performance is higher than the field had assumed. Two costs, however, keep the family from being
+performance is higher than earlier work had found. Two costs, however, keep the family from being
 the obvious choice on the systems of this thesis. First, the leading methods, Klein's included,
 select designs with gradients taken through the simulator, which on stiff ODE solvers needs an
 adjoint pass that is expensive, numerically delicate, or
