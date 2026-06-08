@@ -44,8 +44,18 @@ I_{h_{t-1}}(\xi_t)
 \end{equation}
 with posterior-predictive marginal
 $p(y_t\mid\xi_t,h_{t-1})=\int p(y_t\mid\theta,\xi_t,h_{t-1})\,p(\theta\mid h_{t-1})\,\ud\theta$.
-Equivalently, $I_{h_{t-1}}(\xi_t)=H[p(\theta\mid h_{t-1})]-\mathbb{E}_{y_t}H[p(\theta\mid h_t)]$,
-the expected drop in posterior entropy from observing $y_t$. The key feature for
+The two readings of this quantity are connected by Bayes' rule. Inside the expectation,
+$p(y_t\mid\theta,\xi_t,h_{t-1})/p(y_t\mid\xi_t,h_{t-1})=p(\theta\mid h_t)/p(\theta\mid h_{t-1})$,
+so the integrand is the log-ratio of the updated posterior $p(\theta\mid h_t)$ to the
+current one. Taking the expectation over $p(\theta\mid h_{t-1})\,p(y_t\mid\theta,\xi_t,h_{t-1})$
+and splitting the logarithm turns the two terms into entropies,
+\begin{equation}
+\label{eq:eig-entropy}
+I_{h_{t-1}}(\xi_t)=H[p(\theta\mid h_{t-1})]-\mathbb{E}_{y_t}\,H[p(\theta\mid h_t)],
+\end{equation}
+the expected drop in posterior entropy from observing $y_t$: the first term is the current
+uncertainty, the second is the uncertainty expected to remain after the experiment, and the
+design that maximises one form maximises the other. The key feature for
 what follows is that both the outer expectation and the denominator use the
 \emph{current posterior} $p(\theta\mid h_{t-1})$, which contracts as data accumulate.
 Choosing each $\xi_t$ to maximise Eq.~\eqref{eq:step-eig} is the greedy, or myopic,
@@ -396,6 +406,19 @@ importance weights.
 \subsection{Definition}
 \label{sec:m-pacedef}
 
+PACE is built from self-normalized importance sampling, so we recall the construction before
+applying it. To estimate an expectation $\mathbb{E}_{p}[f(\theta)]$ under a target $p$ from
+which we cannot sample directly, importance sampling draws $\theta_j\sim q$ from a tractable
+proposal and reweights each draw by the ratio $w_j=p(\theta_j)/q(\theta_j)$, since
+$\mathbb{E}_{q}[w\,f]=\mathbb{E}_{p}[f]$. When the target is known only up to a normalising
+constant, as the posterior $p(\theta\mid h)\propto p(\theta)\,p(h\mid\theta)$ is, that
+constant is unknown, but it cancels if the weights are normalised to sum to one: the
+self-normalized estimate $\sum_j\tilde w_j f(\theta_j)$ with $\tilde w_j=w_j/\sum_k w_k$ is
+consistent whenever the proposal covers the target, at the price of an $O(1/J)$ bias. PACE
+applies this idea twice from a single particle set: once to retarget the NPE proposal to the
+current posterior, and once to build the posterior-predictive denominator of the per-step
+EIG from the same particles.
+
 Draw particles $\theta_{1:J}\sim q_\phi(\theta\mid h_{t-1})$ from the NPE and form
 self-normalized importance weights that retarget the proposal to the posterior,
 \begin{equation}
@@ -447,62 +470,31 @@ proposal are trained together and both lose signal once sPCE saturates.
 \subsection{Relation to ACE, sACE, and sLACE}
 \label{sec:m-relation}
 
-The estimator in Eq.~\eqref{eq:pace} belongs to a lineage of contrastive EIG
-estimators from the Foster and Rainforth line of work, and being precise about what is
-and is not new in PACE matters for its positioning. \citet{foster2019variational}
-introduced the variational approach to EIG estimation, learning the inner inference
-network once and reusing it across outcomes, and gave the posterior-style lower bound
-and the nested-Monte-Carlo upper bound that PACE's evaluation brackets descend from.
-\citet{foster2020unified} named the two estimators we build on. Prior contrastive
-estimation (PCE) draws the contrastives from the prior; adaptive contrastive
-estimation (ACE) draws them from a \emph{learned} proposal $q_\phi(\theta\mid y)$ and
-adds the data-generating $\theta_0$ to the denominator, which turns the estimator into
-a lower bound that can be optimised jointly in the design and the proposal. Their
-Theorem~1 records the property PACE reuses: if the proposal equals the posterior, the
-estimator is exact for \emph{every} contrastive count, with no contrastives needed.
-This is the static analogue of our perfect-proposal identity
-(Section~\ref{sec:m-costtransfer}). Crucially, ACE in \citet{foster2020unified} is a
-\emph{static}, single-experiment estimator: the proposal conditions on one outcome
-and is trained jointly with the design.
+The estimator in Eq.~\eqref{eq:pace} shares its algebra with the learned-proposal
+contrastive bounds reviewed in Section~\ref{sec:rw-policy}, so being precise about what is
+and is not new in PACE matters for its positioning. Recall the lineage of that section:
+prior contrastive estimation (PCE, Eq.~\eqref{eq:rw-pce}) draws contrastives from the prior;
+adaptive contrastive estimation (ACE, Eq.~\eqref{eq:rw-ace}) draws them from a learned
+proposal and reweights each contrastive so the denominator still estimates the marginal,
+and is exact for \emph{every} contrastive count when the proposal equals the posterior; and
+the sequential forms sACE (Eq.~\eqref{eq:sace}) and sLACE (Eq.~\eqref{eq:slace}) lift ACE to
+the trajectory objective but were stated only as unevaluated appendix results in
+\citet{foster2021deep} and \citet{ivanova2021implicit}. The exact-when-$q$-is-the-posterior
+property of ACE is the static, single-experiment analogue of PACE's perfect-proposal
+identity (Section~\ref{sec:m-costtransfer}).
 
-The sequential, learned-proposal versions exist only as unevaluated appendix results.
-\citet{foster2021deep} state and prove the sequential ACE bound (their Appendix~B,
-Theorem~5) but train DAD on prior-contrastive sPCE, explicitly deferring the learned
-proposal ``in the interest of simplicity''. \citet{ivanova2021implicit} give the
-likelihood-free version, sLACE (their Appendix~B, Proposition~4), with a training
-recipe, but their experiments use its prior-proposal special case (InfoNCE). So the
-sequential learned-proposal estimator was foreseen, but neither paper implements or
-evaluates it.
-
-Written explicitly, the sequential ACE bound \citep[Theorem~5, Eq.~91]{foster2021deep} is
-\begin{equation}
-\label{eq:sace}
-I_T(\pi) \ge \mathbb{E}_{p(\theta_0,h_T\mid\pi)\,q(\theta_{1:L};h_T)}
-\!\left[\log\frac{p(h_T\mid\theta_0,\pi)}{\frac{1}{L+1}\sum_{\ell=0}^{L} p(h_T\mid\theta_\ell,\pi)\,\dfrac{p(\theta_\ell)}{q(\theta_\ell;h_T)}}\right],
-\end{equation}
-and its likelihood-free analogue sLACE \citep[Proposition~4, Eq.~72]{ivanova2021implicit}
-replaces the likelihood $p(h_T\mid\theta_\ell,\pi)$ with a learned critic
-$U(h_T,\theta_\ell)$,
-\begin{equation}
-\label{eq:slace}
-I_T(\pi) \ge \mathbb{E}_{p(\theta_0,h_T\mid\pi)\,q(\theta_{1:L};h_T)}
-\!\left[\log\frac{U(h_T,\theta_0)}{\frac{1}{L+1}\sum_{\ell=0}^{L} U(h_T,\theta_\ell)\,\dfrac{p(\theta_\ell)}{q(\theta_\ell;h_T)}}\right].
-\end{equation}
-Two features of Eqs.~\eqref{eq:sace}--\eqref{eq:slace} matter for the comparison. The
-proposal $q(\theta;h_T)$ conditions on the \emph{full trajectory}, and each contrastive
-enters the self-normalised denominator with weight $p(\theta_\ell)/q(\theta_\ell;h_T)$,
-so the denominator is an importance-sampling estimate of the prior marginal
-$\int p(h_T\mid\theta,\pi)\,p(\theta)\,\ud\theta=p(h_T\mid\pi)$, which is the denominator
-of the \emph{trajectory} mutual information. Setting $q=p(\theta)$ recovers prior
-contrastives (sPCE, and InfoNCE in the likelihood-free case) and the $\log(L+1)$
-ceiling. PACE (Eq.~\eqref{eq:pace}) keeps this algebraic shape but makes two changes:
-the proposal conditions on the history prefix $h_{t-1}$, and the weight is
+In the sequential bounds the contrastive weight is $p(\theta_\ell)/q(\theta_\ell;h_T)$ and
+the proposal conditions on the \emph{full trajectory} $h_T$, so the denominator is an
+importance-sampling estimate of the prior marginal
+$\int p(h_T\mid\theta,\pi)\,p(\theta)\,\ud\theta=p(h_T\mid\pi)$, the denominator of the
+\emph{trajectory} mutual information; setting $q=p(\theta)$ recovers prior contrastives and
+the $\log(L+1)$ ceiling. PACE (Eq.~\eqref{eq:pace}) keeps this algebraic shape but makes two
+changes: the proposal conditions on the history prefix $h_{t-1}$, and the weight is
 $w_j\propto p(\theta_j\mid h_{t-1})/q_\phi(\theta_j\mid h_{t-1})$, so the denominator
 estimates the \emph{posterior}-predictive $p(y_t\mid\xi_t,h_{t-1})$ of the per-step EIG
-rather than the prior marginal. The three differences below make this precise.
-
-PACE differs from these appendix bounds in three ways, none of which is in the
-algebra they share.
+rather than the prior marginal. PACE therefore differs from the sequential bounds
+Eqs.~\eqref{eq:sace}-\eqref{eq:slace} in three ways, none of which is in the algebra they
+share.
 \begin{enumerate}[leftmargin=*,itemsep=0.2em]
   \item \textbf{Target.} sACE and sLACE bound the total trajectory mutual information,
   whose denominator is the prior-marginal under the outer measure $p(\theta)$. PACE
@@ -550,7 +542,12 @@ effective sample size follows
 \label{eq:ess}
 \mathrm{ESS}\approx\frac{J}{1+\chi^2(p(\theta\mid h)\,\|\,q_\phi(\theta\mid h))},
 \end{equation}
-and declines as the posterior tightens. That this $\chi^2$ is finite at all, which the
+which follows from the standard self-normalized identity
+$\mathrm{ESS}=(\sum_j w_j)^2/\sum_j w_j^2=J/(1+\widehat{\mathrm{cv}}^2)$, where
+$\widehat{\mathrm{cv}}^2$ is the empirical squared coefficient of variation of the weights;
+its expectation under the proposal is the chi-square divergence
+$\mathbb{E}_{q_\phi}[(p/q_\phi-1)^2]=\chi^2(p\,\|\,q_\phi)$. The effective sample size
+declines as the posterior tightens. That this $\chi^2$ is finite at all, which the
 bias rate of Theorem~\ref{thm:consistency} requires, is itself due to the likelihood
 factor in the weight: it cancels the divergence that a prior-targeting weight would
 incur (Appendix~\ref{app:chi2}). This is the same concentration that caused saturation,
@@ -651,14 +648,20 @@ predictive distributions,
 \mathbb{E}_{y_{t,\mathrm{dom}}}\!\left[\log\frac{p(y_{t,\mathrm{dom}}\mid\theta_{\mathrm{dom}},\xi_t)}{p(y_{t,\mathrm{dom}}\mid\theta_{k^\ast},\xi_t)}\right]
 = D_{\mathrm{KL}}\!\big(p(y_t\mid\theta_{\mathrm{dom}},\xi_t)\,\|\,p(y_t\mid\theta_{k^\ast},\xi_t)\big).
 \end{equation}
-For Gaussian likelihoods with a linearised forward map this KL reduces to
+For Gaussian likelihoods with a linearised forward map, the two predictive means differ by
+the design Jacobian acting on $\theta_{\mathrm{dom}}-\theta_{k^\ast}$, so the Gaussian KL of
+Eq.~\eqref{eq:kl} reduces to the quadratic form
 $\tfrac12(\theta_{\mathrm{dom}}-\theta_{k^\ast})^\top F(\xi_t)(\theta_{\mathrm{dom}}-\theta_{k^\ast})$,
-and treating $\theta_{k^\ast}$ as a posterior draw with covariance
-$\Sigma_{\mathrm{post}}$ gives the expected criterion
-$\tfrac12\,\mathrm{tr}\!\big(F(\xi_t)\Sigma_{\mathrm{post}}\big)$, Fisher information
-weighted by residual posterior uncertainty. This is the trace form of the
+where $F(\xi_t)$ is the Fisher information of the design. Treating $\theta_{k^\ast}$ as a
+posterior draw with covariance $\Sigma_{\mathrm{post}}$ and taking the expectation over it
+gives, through $\mathbb{E}[(\theta_{\mathrm{dom}}-\theta_{k^\ast})(\theta_{\mathrm{dom}}-\theta_{k^\ast})^\top]=\Sigma_{\mathrm{post}}$,
+the expected criterion
+$\tfrac12\,\mathrm{tr}\!\big(F(\xi_t)\Sigma_{\mathrm{post}}\big)$: Fisher information weighted
+by residual posterior uncertainty, which is the D-optimal and classical Fisher design
+objective of Section~\ref{sec:rw-classical}. This is the trace form of the
 Gaussian-linearised EIG, so the quantity $\Lambda$ that drove saturation in
-Section~\ref{sec:m-saturation} reappears here as the design objective.
+Section~\ref{sec:m-saturation} reappears here as the design objective; the underlying Laplace
+linearisation is derived in full in Appendix~\ref{app:lindley}.
 
 \subsection{Failure modes}
 \label{sec:m-failure}

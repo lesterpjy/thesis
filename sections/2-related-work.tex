@@ -1,224 +1,313 @@
 \chapter{Related Work}
 \label{sec:related_work}
 
-This thesis sits at the meeting point of three lines of research: Bayesian
-experimental design and its amortized variants, simulation-based inference, and the
-numerical treatment of stiff differential equations. We review each in enough detail
-to make the gap precise. The gap is specific. Amortized policy methods are effective
-on standard benchmarks but lose their training signal on stiff, broad-prior systems
-with high information per experiment. Per-trajectory methods avoid that failure but
-need simulator gradients that stiff systems do not provide reliably. No existing
-method uses the current posterior, like the per-trajectory family, while needing
-neither a trained policy nor simulator gradients, and while remaining valid when the
-posterior is so concentrated that importance weights collapse. We return to this gap
-at the end of the chapter.
+This thesis sits at the meeting point of several lines of research: Bayesian experimental
+design and its amortized variants, simulation-based inference, and the numerical treatment
+of stiff differential equations. This chapter develops each in enough detail that the
+reader meets every object PACE uses before the method is derived in
+Chapter~\ref{sec:methodology}. We begin with the design objective itself
+(Section~\ref{sec:rw-bed}), then with simulation-based inference
+(Section~\ref{sec:rw-sbi}), which supplies the posterior estimator PACE reuses and is
+therefore presented before the methods that build on it. We then trace the contrastive
+estimators that policy methods train on, including the learned-proposal bounds PACE most
+resembles (Section~\ref{sec:rw-policy}), the reinforcement-learning variants that share
+their reward (Section~\ref{sec:rw-rl}), and the per-trajectory family that, like PACE,
+uses the current posterior (Section~\ref{sec:rw-pertraj}). Two shorter sections cover the
+classical Fisher-information designs that reappear inside PACE
+(Section~\ref{sec:rw-classical}) and the cost of differentiating through stiff simulators
+(Section~\ref{sec:rw-stiff}). The chapter closes by stating the gap PACE fills
+(Section~\ref{sec:rw-gap}).
 
 \section{Bayesian experimental design and the information objective}
 \label{sec:rw-bed}
 
-Bayesian experimental design chooses experiments to maximise the expected information
-gain (EIG) about unknown parameters~\citep{lindley1956measure,chaloner1995bayesian,ryan2016review}.
-For a design $\xi$ and a parameter $\theta$ with prior $p(\theta)$, the EIG is the
-mutual information between $\theta$ and the observation $y$,
+Bayesian experimental design chooses experiments to maximise the expected information gain
+(EIG) about unknown parameters~\citep{lindley1956measure,chaloner1995bayesian,ryan2016review}.
+For a design $\xi$ and a parameter $\theta$ with prior $p(\theta)$, the EIG is the mutual
+information between $\theta$ and the observation $y$,
 \begin{equation}
 \label{eq:rw-eig}
 \mathrm{EIG}(\xi)=I(\theta;y\mid\xi)
 =\mathbb{E}_{p(y\mid\xi)}\!\big[H[p(\theta)]-H[p(\theta\mid y,\xi)]\big]
 =\mathbb{E}_{p(\theta)p(y\mid\theta,\xi)}\!\left[\log\frac{p(y\mid\theta,\xi)}{p(y\mid\xi)}\right].
 \end{equation}
-The difficulty is the marginal likelihood $p(y\mid\xi)=\int p(y\mid\theta,\xi)p(\theta)\ud\theta$,
-which is intractable for all but the simplest models. Classical estimators use nested
-Monte Carlo, drawing an outer sample of $(\theta,y)$ and an inner sample to
-approximate the marginal, at a cost that grows with the required
-accuracy~\citep{rainforth2018nesting}. In the \emph{sequential} setting the design at
-each step depends on the data seen so far, which turns the problem into a control
-problem over a growing, history-dependent design space; \citet{rainforth2024modern}
-review the modern landscape. The two families that dominate this sequential setting,
-and against which PACE is compared, are amortized policies and per-trajectory methods.
-
-\section{Amortized policy-based design}
-\label{sec:rw-policy}
-
-\subsection{The contrastive-EIG lineage: ACE, sACE, and sLACE}
-\label{sec:rw-lineage}
-
-PACE's estimator descends from a specific line of contrastive EIG estimators, so we
-trace it in detail. \citet{foster2019variational} introduced the variational approach
-to EIG estimation: rather than the doubly-intractable nested Monte Carlo of the
-classical EIG, they learn an amortized inner network once and reuse it across outcome
-draws, and they give both a posterior-style lower bound and a nested-Monte-Carlo upper
-bound. These are the ancestors of the sPCE and sNMC brackets PACE uses for evaluation.
-\citet{foster2020unified} then named two estimators in this family. Prior contrastive
-estimation (PCE) approximates the intractable marginal likelihood by an average over
-$L$ contrastives drawn from the prior $p(\theta)$. Adaptive contrastive estimation
-(ACE) instead draws the contrastives from a \emph{learned} proposal
-$q_\phi(\theta\mid y)$ and includes the data-generating $\theta_0$ in the denominator,
-which converts the estimator into a lower bound that can be optimised jointly in the
-design and the proposal. Their Theorem~1 establishes that ACE is a consistent lower
-bound, monotone in $L$, and exact for \emph{every} $L$ when the proposal equals the
-posterior. Both PCE and ACE in \citet{foster2020unified} are \emph{static},
-single-experiment estimators.
-
-Deep Adaptive Design (DAD)~\citep{foster2021deep} lifted this to the sequential,
-amortized setting: it trains a policy network $\pi_\phi$ mapping a history to the next
-design by maximising the trajectory mutual information of Eq.~\eqref{eq:traj-mi},
-estimated by the sequential prior-contrastive bound (sPCE, Eq.~\eqref{eq:traj-spce})
-with contrastives from the prior. The learned-proposal sequential version, sACE, is
-stated and proved in DAD's appendix (Theorem~5) but is never implemented; the authors
-train on prior-contrastive sPCE and defer the learned proposal explicitly ``in the
-interest of simplicity''. Implicit DAD (iDAD)~\citep{ivanova2021implicit} extends DAD
-to likelihood-free simulators with a learned critic, and gives the likelihood-free
-sequential learned-proposal bound, sLACE, in its appendix (Proposition~4) with a
-training recipe; the reported experiments, however, all use its prior-proposal special
-case, the InfoNCE bound. The sequential learned-proposal estimator was therefore
-foreseen in this lineage but left as a proven, unevaluated appendix result, a point we
-return to in Chapter~\ref{sec:methodology} when we position PACE against it.
-
-A central fact about every member of this family is that the training objective is a
-contrastive lower bound on mutual information, and such bounds cannot exceed $\log(L+1)$
-nats for $L$ contrastives~\citep{mcallester2020formal,paninski2005asymptotic}. The
-InfoNCE form makes this explicit as a classification bound over $L{+}1$
-candidates~\citep{oord2018representation,poole2019variational}. This ceiling is the
-starting point of our saturation analysis: it is a property of the objective, not of
-any network or optimiser, so every method trained on it inherits the failure mode we
-diagnose.
-
-\subsection{Other amortized and reinforcement-learning design methods}
-\label{sec:rw-amortized}
-
-The policy-based family is large and active, and all of it trains against the
-prior-contrastive objective. Step-DAD~\citep{hedman2025stepdad} is semi-amortized: it
-pretrains a DAD policy and then finetunes it at each intervention point with a few
-gradient steps, trading deployment compute for better designs; the authors also report
-that pure DAD is unstable on the censored-likelihood CES model, which we corroborate.
-A reinforcement-learning thread treats sequential design as a Markov decision process:
-\citet{blau2022optimizing} optimise the design policy with deep RL against an
-sPCE-style information reward, \citet{huan2016sequential} use approximate dynamic
-programming for the same objective, \citet{shen2025vsoed} give a variational sequential
-OED method trained by RL, and \citet{belliardo2024modelaware} apply model-aware RL to
-design in quantum metrology. A more recent thread amortizes inference and acquisition
-\emph{jointly} in one network: ALINE~\citep{huang2025aline} and the decision-focused
-method of \citet{huang2024amortized} use attention-based architectures to produce both
-a posterior and the next query, and JADAI~\citep{bracher2025jadai} jointly amortizes
-adaptive design and Bayesian inference. For dynamical systems specifically,
-\citet{strouwen2026deep} specialise deep adaptive design to model-based design of
-experiments for ODEs, and \citet{treloar2022deep} use deep RL to design experiments for
-biological ODE models, reporting gains over classical Fisher-information designs. These
-methods differ in architecture and in how they amortize, but they share the
-prior-contrastive training signal, and therefore the saturation behaviour of
-Section~\ref{sec:rw-lineage} on high-information systems. PACE departs from all of them
-by not training a policy at all: it reuses a one-time simulation-based posterior
-estimator as the contrastive proposal and selects designs by forward search.
-
-\section{Per-trajectory and posterior-guided design}
-\label{sec:rw-pertraj}
-
-The second family does not train a policy. It maintains an estimate of the current
-posterior and chooses the next design by optimising an acquisition score against that
-posterior, re-fitting as data arrive. \citet{kleinegesse2020bayesian} estimate the EIG
-for implicit models with mutual-information neural estimation and optimise the design
-directly. \citet{klein2026supercharging} show that several EIG estimators can be built
-on modern simulation-based-inference density estimators and optimised by
-multiple-restart gradient ascent through the simulator, unifying inference and design;
-this is the closest per-trajectory method to PACE, and the key difference is that it
-relies on simulator gradients, whereas PACE uses only forward evaluations.
-\citet{iollo2025posterior} and \citet{iollo2025contrastive} develop posterior-guided
-and contrastive acquisition criteria, \citet{bharti2024optimizing} optimise designs
-through an amortized posterior, and \citet{zaballa2025bridging} bridge sequential
-design and simulation-based inference. \citet{vanlier2014bayesian} is an earlier
-instance of the same idea for systems-biology ODEs, sequentially selecting informative
-conditions by active learning. These methods share PACE's use of the current
-posterior; they differ in that they either retrain a proposal each step or depend on
-gradients through the simulator.
+The two forms are equal and each is useful: the middle form reads as the expected drop in
+posterior entropy, and the right form, the one estimators target, reads as an expected
+log-ratio of the likelihood to the marginal. The difficulty in both is the marginal
+likelihood $p(y\mid\xi)=\int p(y\mid\theta,\xi)p(\theta)\ud\theta$, which is intractable
+for all but the simplest models. Classical estimators use nested Monte Carlo, drawing an
+outer sample of $(\theta,y)$ and an inner sample to approximate the marginal, at a cost
+that grows with the required accuracy~\citep{rainforth2018nesting}. In the
+\emph{sequential} setting the design at each step depends on the data seen so far, which
+turns the problem into a control problem over a growing, history-dependent design space;
+\citet{rainforth2024modern} review the modern landscape. The methods that dominate this
+sequential setting, and against which PACE is compared, all reduce the intractable
+marginal to a contrastive average over sampled parameters, and they differ in where those
+parameters come from and whether a policy is trained. Understanding them requires first
+the inference machinery that produces those parameters.
 
 \section{Simulation-based inference}
 \label{sec:rw-sbi}
 
-PACE draws its contrastives from an amortized neural posterior estimator, so it builds
-directly on simulation-based inference (SBI), which performs Bayesian inference when
-the likelihood is intractable but the simulator can be sampled~\citep{cranmer2020frontier,deistler2025practical}.
-Three families are standard. Neural posterior estimation (NPE) parameterises the
-posterior $q_\phi(\theta\mid x)$ directly with a conditional density estimator:
-\citet{papamakarios2016fast} used mixture density networks,
-\citet{lueckmann2017flexible} replaced them with masked autoregressive flows in a
-sequential scheme, and \citet{greenberg2019automatic} introduced automatic posterior
-transformation (NPE-C) with a correction that keeps the target exact across sequential
-rounds. Neural likelihood estimation learns a surrogate likelihood and samples the
-posterior with MCMC~\citep{papamakarios2019sequential}, and neural ratio estimation
-learns the likelihood-to-evidence ratio by classification~\citep{hermans2020likelihood,durkan2020contrastive,miller2022contrastive}.
-The density estimators themselves are usually normalizing
-flows~\citep{papamakarios2021normalizing}; we use neural spline
-flows~\citep{durkan2019neural} because they give fast, exact density evaluation, which
-the importance weighting in PACE requires. More recent flow-matching posterior
-estimators~\citep{lipman2023flow,wildberger2024flow,carrasco2026pawsterior} train a
-continuous-time velocity field~\citep{chen2018neural} and scale to high dimensions, but
-require an ODE solve per density evaluation, which would dominate the per-step cost of
-an importance-weighted acquisition score. The \texttt{sbi} toolkit packages these
+In the models considered here, the simulator can be run forward, $y\sim p(y\mid\theta,\xi)$,
+and the observation likelihood can be evaluated for a simulated trajectory, but the
+posterior $p(\theta\mid y)$ is not available in closed form. Simulation-based inference
+(SBI) is the body of methods that perform Bayesian inference in exactly this situation,
+using samples from the simulator in place of a tractable
+likelihood~\citep{cranmer2020frontier,deistler2025practical}. PACE draws its contrastive
+particles from an SBI posterior estimator, so we review the relevant families and the one
+property of their importance weights that the method depends on.
+
+Three families are standard. \emph{Neural posterior estimation} (NPE) parameterises the
+posterior $q_\phi(\theta\mid x)$ directly with a conditional density estimator and trains
+it by maximum likelihood on simulated pairs $(\theta,x)\sim p(\theta)p(x\mid\theta)$, which
+minimises the forward Kullback-Leibler divergence $\mathbb{E}_{p(x)}[\,\mathrm{KL}(p(\theta\mid x)\,\|\,q_\phi(\theta\mid x))\,]$
+and so targets the true posterior at every conditioning value. \citet{papamakarios2016fast}
+used mixture density networks, \citet{lueckmann2017flexible} replaced them with masked
+autoregressive flows in a sequential scheme, and \citet{greenberg2019automatic} introduced
+automatic posterior transformation (NPE-C) with a correction that keeps the target exact
+across sequential rounds. \emph{Neural likelihood estimation} instead learns a surrogate
+likelihood and samples the posterior with MCMC~\citep{papamakarios2019sequential}, and
+\emph{neural ratio estimation} learns the likelihood-to-evidence ratio by
+classification~\citep{hermans2020likelihood,durkan2020contrastive,miller2022contrastive}.
+PACE uses NPE because it gives direct posterior samples and an evaluable posterior density,
+both of which the importance weighting of Chapter~\ref{sec:methodology} requires.
+
+The density estimator inside NPE is usually a normalizing
+flow~\citep{papamakarios2021normalizing}, an invertible map between a simple base
+distribution and the target whose exact density follows from the change-of-variables
+formula. We use neural spline flows~\citep{durkan2019neural} because they give fast and
+exact density evaluation, which the importance weights need at every step. More recent
+flow-matching posterior estimators~\citep{lipman2023flow,wildberger2024flow,carrasco2026pawsterior}
+train a continuous-time velocity field~\citep{chen2018neural} and scale to high dimensions,
+but they require an ODE solve per density evaluation, which would dominate the per-step
+cost of an importance-weighted acquisition score. The \texttt{sbi} toolkit packages these
 methods~\citep{tejerocantero2020sbi}, the \texttt{sbibm} suite benchmarks
 them~\citep{lueckmann2021benchmarking}, and amortized architectures such as
-BayesFlow~\citep{radev2023bayesflow} handle variable numbers of observations.
+BayesFlow~\citep{radev2023bayesflow} handle variable numbers of observations, which is what
+lets a single network return a posterior at every step of a growing history.
 
-Two points from this literature matter for PACE. First, sequential SBI methods keep
-their importance weights well behaved by retraining the proposal across rounds, for
-example with truncated proposals~\citep{deistler2022truncated}; PACE deliberately does
-not do this and instead accepts the decline in effective sample size, which is why the
-analysis of weight collapse in Chapter~\ref{sec:methodology} is necessary. Second, the
-required importance-sampling sample size grows like the exponential of the
-Kullback-Leibler divergence between target and proposal~\citep{chatterjee2018sample},
-which is the formal reason PACE cannot be read as a calibrated value estimator under a
-concentrated posterior. Because amortized posteriors can be miscalibrated, we test
-ours with the standard diagnostics: trust and coverage analysis~\citep{hermans2022trust},
-simulation-based calibration~\citep{talts2020validating}, distance-to-random-point
-coverage~\citep{lemos2023tarp}, and Pareto-smoothed importance
+Two properties of this literature shape the design of PACE. First, sequential SBI keeps
+its importance weights well behaved by retraining the proposal across rounds, for example
+with truncated proposals~\citep{deistler2022truncated}. PACE deliberately does not retrain:
+it freezes one proposal and accepts that, as the posterior concentrates, the weights
+degrade. The reason this is tolerable for design, and the analysis it requires, is the
+subject of Chapter~\ref{sec:methodology}. Second, the number of importance samples needed
+to control the variance of a self-normalized estimate grows like the exponential of the
+Kullback-Leibler divergence between target and proposal~\citep{chatterjee2018sample}. This
+is the formal reason a frozen proposal cannot give a calibrated EIG \emph{value} once the
+posterior is much tighter than the proposal, and it is why PACE is read as a design
+ranking rather than an absolute information estimate. Because amortized posteriors can be
+miscalibrated, we test ours with the standard diagnostics: trust and coverage
+analysis~\citep{hermans2022trust}, simulation-based calibration~\citep{talts2020validating},
+distance-to-random-point coverage~\citep{lemos2023tarp}, and Pareto-smoothed importance
 sampling~\citep{vehtari2024pareto}.
 
-\section{Differentiating through stiff simulators}
-\label{sec:rw-stiff}
+\section{Amortized policy-based design and the contrastive-EIG lineage}
+\label{sec:rw-policy}
 
-Gradient-based design optimisation, and policy training by the sPCE objective,
-differentiate through the ODE solver. On stiff systems this is the dominant cost and a
-source of instability. The adjoint method incurs a large compilation overhead and can
-be numerically delicate, which has motivated dedicated discretise-then-optimise and
-reversible-solver constructions~\citep{kim2024stiff,caldana2025neural,pal2023neural,kidger2024efficient},
-and vanishing-gradient pathologies are documented for stiff
-dynamics~\citep{linot2025vanishing}. This literature is the practical motivation for
-the forward-only optimiser in PACE: by scoring designs with forward simulations only,
-PACE avoids the adjoint entirely and applies to stiff and black-box simulators where
-gradient-based design is unstable or infeasible.
+The first family that dominates sequential BED trains a design policy offline and deploys
+it as a fast forward pass. Its members differ in architecture but share one training
+signal, a contrastive lower bound on information, so we trace that lineage in detail; PACE
+reuses its estimator algebra while changing what the contrastives are.
+
+\subsection{Contrastive EIG estimation: PCE and ACE}
+\label{sec:rw-contrastive}
+
+\citet{foster2019variational} introduced the variational approach to EIG estimation:
+rather than the doubly-intractable nested Monte Carlo of the classical EIG, they learn an
+amortized inner network once and reuse it across outcome draws, and they give both a
+posterior-style lower bound and a nested-Monte-Carlo upper bound. These are the ancestors
+of the sPCE and sNMC brackets PACE uses for evaluation. \citet{foster2020unified} then
+named two estimators in this family for a single experiment. Let $\theta_0\sim p(\theta)$
+generate the observation $y$, and let $\theta_{1:L}$ be contrastive parameters. \emph{Prior
+contrastive estimation} (PCE) draws the contrastives from the prior, $\theta_{1:L}\sim
+p(\theta)$, and estimates the EIG by
+\begin{equation}
+\label{eq:rw-pce}
+\hat I^{\mathrm{PCE}}_L(\xi)
+=\log\frac{p(y\mid\theta_0,\xi)}{\frac{1}{L+1}\sum_{\ell=0}^{L}p(y\mid\theta_\ell,\xi)} .
+\end{equation}
+The denominator is a Monte Carlo estimate of the marginal $p(y\mid\xi)$, and including the
+data-generating $\theta_0$ in the sum makes Eq.~\eqref{eq:rw-pce} a lower bound on the EIG.
+\emph{Adaptive contrastive estimation} (ACE) instead draws the contrastives from a
+\emph{learned} proposal $q_\phi(\theta\mid y)$ and reweights each by the prior-to-proposal
+ratio,
+\begin{equation}
+\label{eq:rw-ace}
+\hat I^{\mathrm{ACE}}_L(\xi)
+=\log\frac{p(y\mid\theta_0,\xi)}{\frac{1}{L+1}\sum_{\ell=0}^{L}p(y\mid\theta_\ell,\xi)\,\dfrac{p(\theta_\ell)}{q_\phi(\theta_\ell\mid y)}},
+\qquad \theta_{1:L}\sim q_\phi(\theta\mid y),
+\end{equation}
+so the reweighted denominator is again an estimate of the same marginal $p(y\mid\xi)$, now
+using a better-placed proposal. The role of the weight $p(\theta_\ell)/q_\phi(\theta_\ell\mid y)$
+is to correct for sampling the contrastives from $q_\phi$ rather than the prior. Their
+Theorem~1 records the property PACE reuses: ACE is a consistent lower bound, monotone in
+$L$, and exact for \emph{every} $L$, including $L=0$, when the proposal equals the
+posterior. Both PCE and ACE in \citet{foster2020unified} are \emph{static},
+single-experiment estimators whose proposal conditions on one outcome.
+
+A fact common to this whole family is that the training objective is a contrastive lower
+bound on mutual information, and such bounds cannot exceed $\log(L+1)$ nats for $L$
+contrastives~\citep{mcallester2020formal,paninski2005asymptotic}: the denominator of
+Eq.~\eqref{eq:rw-pce} is at least $\frac{1}{L+1}p(y\mid\theta_0,\xi)$, so the ratio is at
+most $L+1$. The InfoNCE form makes the same ceiling explicit as a classification bound over
+$L{+}1$ candidates~\citep{oord2018representation,poole2019variational}. This ceiling is the
+starting point of the saturation analysis in Chapter~\ref{sec:methodology}: it is a
+property of the objective, not of any network or optimiser, so every method trained on it
+inherits the failure we diagnose.
+
+\subsection{Sequential amortization: DAD, iDAD, and the learned-proposal bounds}
+\label{sec:rw-dad}
+
+Deep Adaptive Design (DAD)~\citep{foster2021deep} lifted contrastive estimation to the
+sequential, amortized setting. It trains a policy network $\pi_\phi$ that maps a history
+$h_{t-1}=\{(\xi_i,y_i)\}_{i<t}$ to the next design, maximising the mutual information
+between $\theta$ and the full trajectory $h_T$ generated under the policy, estimated by the
+\emph{sequential} prior-contrastive bound (sPCE), which is the trajectory analogue of
+Eq.~\eqref{eq:rw-pce} with the per-experiment likelihood replaced by the trajectory
+likelihood $p(h_T\mid\theta,\pi)$. Chapter~\ref{sec:methodology} derives this trajectory
+objective and its bound in full. Implicit DAD (iDAD)~\citep{ivanova2021implicit} extends
+DAD to likelihood-free simulators by replacing the likelihood with a learned critic, and
+Step-DAD~\citep{hedman2025stepdad} refines a pretrained DAD policy with a few gradient
+steps at each deployment step, trading deployment compute for better designs.
+
+The learned-proposal versions of the sequential bound were written down in this lineage but
+never run. \citet{foster2021deep} state and prove the sequential ACE bound in their
+appendix (Theorem~5) but train DAD on prior-contrastive sPCE, explicitly deferring the
+learned proposal ``in the interest of simplicity''. Written out, the sequential ACE bound
+\citep[Theorem~5, Eq.~91]{foster2021deep} is
+\begin{equation}
+\label{eq:sace}
+I_T(\pi) \ge \mathbb{E}_{p(\theta_0,h_T\mid\pi)\,q(\theta_{1:L};h_T)}
+\!\left[\log\frac{p(h_T\mid\theta_0,\pi)}{\frac{1}{L+1}\sum_{\ell=0}^{L} p(h_T\mid\theta_\ell,\pi)\,\dfrac{p(\theta_\ell)}{q(\theta_\ell;h_T)}}\right],
+\end{equation}
+the trajectory analogue of Eq.~\eqref{eq:rw-ace}, with the proposal conditioning on the
+full trajectory $h_T$. \citet{ivanova2021implicit} give the likelihood-free analogue, sLACE
+(their Appendix~B, Proposition~4), with a training recipe; it replaces the trajectory
+likelihood $p(h_T\mid\theta_\ell,\pi)$ with a learned critic $U(h_T,\theta_\ell)$,
+\begin{equation}
+\label{eq:slace}
+I_T(\pi) \ge \mathbb{E}_{p(\theta_0,h_T\mid\pi)\,q(\theta_{1:L};h_T)}
+\!\left[\log\frac{U(h_T,\theta_0)}{\frac{1}{L+1}\sum_{\ell=0}^{L} U(h_T,\theta_\ell)\,\dfrac{p(\theta_\ell)}{q(\theta_\ell;h_T)}}\right],
+\end{equation}
+but the reported iDAD experiments all use its prior-proposal special case, the InfoNCE
+bound. In both Eqs.~\eqref{eq:sace} and~\eqref{eq:slace} the contrastive weight is
+$p(\theta_\ell)/q(\theta_\ell;h_T)$, so the denominator estimates the \emph{prior} marginal
+$\int p(h_T\mid\theta,\pi)p(\theta)\ud\theta=p(h_T\mid\pi)$ of the trajectory mutual
+information, and setting $q=p(\theta)$ recovers prior contrastives and the $\log(L+1)$
+ceiling. The sequential learned-proposal estimator was therefore foreseen in this lineage
+but left as a proven, unevaluated appendix result. PACE keeps the algebra of
+Eq.~\eqref{eq:sace} but conditions the proposal on the history prefix and reweights toward
+the running posterior rather than the prior, a change Chapter~\ref{sec:methodology} makes
+precise and from which the saturation diagnosis and the cost transfer follow.
+
+\section{Reinforcement-learning approaches}
+\label{sec:rw-rl}
+
+A distinct thread trains the design policy by reinforcement learning, casting sequential
+design as a Markov decision process in which the state is the history, the action is the
+next design, and the reward is an information measure. \citet{blau2022optimizing} optimise
+the policy with deep RL against an sPCE-style information reward, \citet{huan2016sequential}
+use approximate dynamic programming for the same objective, \citet{shen2025vsoed} give a
+variational sequential optimal-design method trained by RL, and
+\citet{belliardo2024modelaware} apply model-aware RL to design in quantum metrology. These
+methods are relevant to this thesis for a specific reason. Because they treat the simulator
+as a black-box environment and learn from rewards rather than from pathwise gradients, they
+\emph{avoid differentiating through the simulator}, which is one of the two obstacles this
+thesis confronts. They do not, however, avoid the other: when the reward is the
+prior-contrastive sPCE bound, it saturates at $\log(L+1)$ on high-information experiments,
+so the reward signal carries the same vanishing information about which design is better. A
+reinforcement-learning method with a reward that is not a prior-contrastive bound could in
+principle avoid both obstacles at once, which makes pure-RL design a plausible alternative
+to PACE on stiff systems. We do not implement or compare against such a method, and we mark
+this as an open point rather than a settled comparison.
+
+\section{Per-trajectory and posterior-guided design}
+\label{sec:rw-pertraj}
+
+The second dominant family does not train a policy at all. It maintains an estimate of the
+current posterior and chooses each design by optimising an acquisition score against that
+posterior, re-fitting as data arrive. This is the family PACE belongs to, so we are precise
+about how its members work and why they have not, until now, been shown to beat amortized
+policies on the hardest systems.
+
+\citet{kleinegesse2020bayesian} estimate the EIG for implicit models with
+mutual-information neural estimation and optimise the design directly.
+\citet{klein2026supercharging} show that several EIG estimators can be built on modern SBI
+density estimators and optimised by multiple-restart gradient ascent through the simulator,
+unifying inference and design; this is the closest per-trajectory method to PACE.
+\citet{iollo2025posterior} and \citet{iollo2025contrastive} develop posterior-guided and
+contrastive acquisition criteria, \citet{bharti2024optimizing} optimise designs through an
+amortized posterior, \citet{zaballa2025bridging} bridge sequential design and SBI, and
+\citet{vanlier2014bayesian} is an earlier instance of the same idea for systems-biology
+ODEs, sequentially selecting informative conditions by active learning. These methods share
+PACE's use of the current posterior, which is what frees them from the $\log(L+1)$ ceiling
+that the prior-contrastive objective imposes on the policy family.
+
+Two limitations have kept this family from being the obvious choice. First, the leading
+methods select designs with gradients taken through the simulator, which on stiff ODE
+solvers needs an adjoint pass that is expensive, numerically delicate, or
+unavailable~\citep{klein2026supercharging,kim2024stiff,pal2023neural}. Second, several of
+them retrain or update the posterior at every step, paying a per-step inference cost that
+amortized policies avoid. The consequence is a regime that has fallen between the two
+families: on stiff, high-information systems, policy training loses its signal to saturation
+while gradient-based per-trajectory design cannot get reliable simulator gradients, so
+neither family is usable. A central empirical claim of this thesis is that a per-trajectory
+method that avoids both costs, by reusing a one-time posterior estimator and scoring designs
+with forward simulations only, not only matches amortized policies on these systems but is
+the only feasible family on the stiffest of them. PACE departs from the methods above by
+using a posterior that is trained once and frozen, and by selecting designs without any
+simulator gradient.
 
 \section{Classical optimal design for ODE models and model discrimination}
 \label{sec:rw-classical}
 
-Before amortization, optimal design for ODE models was dominated by local criteria
-based on the Fisher information matrix, such as D-optimality, and by methods for
-discriminating between competing models. \citet{huan2014simulation} developed
-simulation-based optimal design for nonlinear systems.
-\citet{flassig2012optimal} designed optimal stimulus experiments to discriminate
-between biochemical ODE models using the overlap of their predictive distributions,
-\citet{hainy2022optimal} cast model discrimination as a classification problem and
-compared optimal against equidistant designs, and \citet{braniff2022nloed} provide a
-software package for nonlinear optimal design in systems biology using the
-Jensen-Shannon divergence between predictive densities. These criteria reappear inside
-PACE: the collapsed-weight limit of the PACE score reduces to a Fisher-information
-criterion (Chapter~\ref{sec:methodology}), which connects the method to this classical
-line even though it is derived from a contrastive estimator. In that same limit the
-criterion becomes a likelihood-ratio test between two parameter hypotheses, the
-sequential-analysis object introduced by \citet{wald1945sequential} and used for
-Bayesian adaptive model discrimination by \citet{cavagnaro2010adaptive}; PACE recovers
-this discriminative criterion automatically as the effective sample size collapses,
-rather than by design.
+Before amortization, optimal design for ODE models was dominated by local criteria based on
+the Fisher information matrix, such as D-optimality, and by methods for discriminating
+between competing models. \citet{huan2014simulation} developed simulation-based optimal
+design for nonlinear systems. \citet{flassig2012optimal} designed optimal stimulus
+experiments to discriminate between biochemical ODE models using the overlap of their
+predictive distributions, \citet{hainy2022optimal} cast model discrimination as a
+classification problem and compared optimal against equidistant designs, and
+\citet{braniff2022nloed} provide a software package for nonlinear optimal design in systems
+biology using the Jensen-Shannon divergence between predictive densities. These criteria
+reappear inside PACE: the collapsed-weight limit of the PACE score reduces to a
+Fisher-information criterion (Chapter~\ref{sec:methodology}), which connects the method to
+this classical line even though it is derived from a contrastive estimator. In that same
+limit the criterion becomes a likelihood-ratio test between two parameter hypotheses, the
+sequential-analysis object introduced by \citet{wald1945sequential} and used for Bayesian
+adaptive model discrimination by \citet{cavagnaro2010adaptive}; PACE recovers this
+discriminative criterion automatically as the effective sample size collapses, rather than
+by design.
+
+\section{Differentiating through stiff simulators}
+\label{sec:rw-stiff}
+
+Gradient-based design optimisation, and policy training by the sPCE objective, both
+differentiate through the ODE solver. On stiff systems this is the dominant cost and a
+source of instability. The adjoint method incurs a large compilation overhead and can be
+numerically delicate, which has motivated dedicated discretise-then-optimise and
+reversible-solver constructions~\citep{kim2024stiff,caldana2025neural,pal2023neural,kidger2024efficient},
+and vanishing-gradient pathologies are documented for stiff
+dynamics~\citep{linot2025vanishing}. This literature is the practical motivation for the
+forward-only optimiser in PACE: by scoring designs with forward simulations only, PACE
+avoids the adjoint entirely and applies to stiff and black-box simulators where
+gradient-based design is unstable or infeasible. It is also what separates PACE from the
+gradient-based per-trajectory methods of Section~\ref{sec:rw-pertraj}, which share its use
+of the posterior but not its avoidance of the adjoint.
 
 \section{Summary and the gap}
 \label{sec:rw-gap}
 
-The amortized policy family casts sequential design as a single trajectory objective
-and trains a network to optimise it, but that objective is a prior-contrastive bound
-with a $\log(L+1)$ ceiling, so its training signal vanishes on high-information
-systems. The per-trajectory family avoids the ceiling by using the current posterior,
-but it pays for simulator gradients that stiff systems do not provide reliably, or it
-retrains a proposal at every step. Simulation-based inference supplies the posterior
-estimator that PACE reuses, but its own theory says the importance weights must
-degrade as the posterior concentrates. The gap, then, is a sequential design method
-that takes the current posterior from a one-time SBI estimator, scores designs with
-forward simulations only, and stays valid when the importance weights collapse. PACE
-is that method, and the next chapter derives it.
+The amortized policy family casts sequential design as a single trajectory objective and
+trains a network to optimise it, but that objective is a prior-contrastive bound with a
+$\log(L+1)$ ceiling, so its training signal vanishes on high-information systems, and the
+reinforcement-learning variants that avoid simulator gradients still inherit the saturated
+reward. The per-trajectory family avoids the ceiling by using the current posterior, but it
+pays for simulator gradients that stiff systems do not provide reliably, or it retrains a
+proposal at every step. Simulation-based inference supplies the posterior estimator that
+PACE reuses, but its own theory says the importance weights must degrade as the posterior
+concentrates. The gap, then, is a sequential design method that takes the current posterior
+from a one-time SBI estimator, scores designs with forward simulations only, and stays valid
+when the importance weights collapse. PACE is that method, and the next chapter derives it.
