@@ -35,8 +35,7 @@ sequence of experiments, each chosen in light of the last, which is exactly the 
 the timed-input problems above require.
 
 
-Applying this framework to real dynamical systems is computationally demanding, for a reason
-that matters throughout the thesis. The expected information gain depends on the marginal
+Applying this framework to real dynamical systems is computationally demanding. The expected information gain depends on the marginal
 likelihood of the data, which averages the simulator over the prior and has no closed form,
 so it must be estimated by nested Monte Carlo: an outer average over possible outcomes and an
 inner average that runs the simulator many times to approximate the
@@ -49,7 +48,7 @@ The systems in which timing matters most violate both assumptions, through three
 that compound.
 
 The first property is stiffness. A system of differential equations is stiff when its solution
-combines processes on widely separated timescales, which biochemical networks do as a rule,
+combines processes on widely separated timescales. In general biochemical networks exhibits stiffness
 because their rate constants span several orders of magnitude: fast reversible binding sits
 alongside slow catalysis and slower degradation~\citep{huangferrell1996mapk}. Stiffness carries
 a numerical penalty. Explicit solvers must take extremely small steps to stay numerically
