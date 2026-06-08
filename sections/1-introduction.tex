@@ -114,9 +114,10 @@ choices. Deep Adaptive Design (DAD) introduced the construction~\citep{foster202
 extensions to likelihood-free simulators~\citep{ivanova2021implicit}, deployment-time
 refinement~\citep{hedman2025stepdad}, and reinforcement-learning variants such as RL-BOED and
 variational sequential design~\citep{blau2022optimizing,shen2025vsoed}; these differ in how the
-policy is trained but share a contrastive, sPCE-style objective. The remaining alternative,
-per-trajectory online optimisation against a posterior obtained by simulation-based inference
-(SBI), has been reported to reach a lower information gain than the trained
+policy is trained but share a contrastive, sPCE-style objective. The other approach is per-trajectory design, which
+optimises each design online against the current posterior instead of learning a reusable policy.
+Its recent instances obtain that posterior by simulation-based inference (SBI) and have been
+reported to reach a lower information gain than the trained
 policy~\citep{zaballa2025bridging,klein2026supercharging}.
 
 This thesis shows that the advantage of amortized policies does not hold on the stiff,
