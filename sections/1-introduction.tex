@@ -149,6 +149,19 @@ would be the only feasible choice, reversing the relationship found on the stand
 remaining difficulty is to stay usable when the posterior is so concentrated that its importance
 weights collapse.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.7\linewidth]{figures/fig_a1_hero.pdf}
+  \caption[The saturation obstacle and the PACE response]{The problem and the response.
+  \textbf{(a)} As experiments accumulate, the true information gain keeps rising, but the
+  sPCE bound flattens at its $\log(L+1)$ ceiling after a saturation step
+  $t_{\mathrm{sat}}$, while PACE continues to track the truth. \textbf{(b)} After
+  saturation, sPCE assigns nearly the same score to every candidate design and cannot rank
+  them, whereas PACE still separates them. \textbf{(c)} The downstream consequence: PACE
+  yields a tighter posterior at the true parameter $\theta^\ast$.}
+  \label{fig:hero}
+\end{figure}
+
 \section{Contributions}
 \label{sec:intro-contributions}
 
@@ -199,18 +212,7 @@ method wins. The four contributions trace it through the method.
   the effective sample size.
 \end{enumerate}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/fig_a1_hero.pdf}
-  \caption[The saturation obstacle and the PACE response]{The problem and the response.
-  \textbf{(a)} As experiments accumulate, the true information gain keeps rising, but the
-  sPCE bound flattens at its $\log(L+1)$ ceiling after a saturation step
-  $t_{\mathrm{sat}}$, while PACE continues to track the truth. \textbf{(b)} After
-  saturation, sPCE assigns nearly the same score to every candidate design and cannot rank
-  them, whereas PACE still separates them. \textbf{(c)} The downstream consequence: PACE
-  yields a tighter posterior at the true parameter $\theta^\ast$.}
-  \label{fig:hero}
-\end{figure}
+
 
 \section{Research questions}
 \label{sec:intro-rqs}
