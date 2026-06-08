@@ -166,12 +166,15 @@ reversing the relationship found on the standard benchmarks.
 
 This thesis closes that gap with a method in two separable parts. The first is \textbf{PACE}
 (Posterior-Amortized Contrastive Estimation), an estimator of the per-step information gain. PACE
-keeps the algebra of the sequential adaptive contrastive estimator (sACE), the learned-proposal
-bound stated but never evaluated in \citet{foster2021deep}, and supplies its proposal from a
-posterior rather than the prior: a neural posterior estimator trained once, offline, by
-simulation-based inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural},
-whose draws are reweighted toward the running posterior by self-normalized importance weights.
-Drawing the contrastives from the posterior is what removes saturation. The second part is a
+adapts the sequential adaptive contrastive estimator (sACE), the learned-proposal bound stated but
+never evaluated in \citet{foster2021deep}, in two ways. First, sACE bounds the information in the
+\emph{whole trajectory}, with its contrastives reweighted toward the prior so that its denominator
+is a prior marginal, as in the prior-contrastive sPCE; PACE instead targets the \emph{per-step}
+information gain, whose denominator is the current posterior-predictive. Second, PACE supplies the
+proposal from a neural posterior estimator trained once, offline, by simulation-based
+inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}: particles are drawn
+from this estimator and corrected to the true posterior by self-normalized importance weights.
+Drawing the contrastives from the posterior in this way is what removes saturation. The second part is a
 forward-only design optimiser, which chooses each design by scoring candidate designs with PACE
 using forward simulations only, so the design search never differentiates through the simulator.
 The two parts are independent: PACE removes saturation whatever optimiser is used, and the
