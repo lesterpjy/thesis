@@ -19,11 +19,11 @@ interventions and measurements chosen over time.
 Choosing such a schedule well is hard for two reasons. The experiments are expensive, in
 time, material, or effort, so only a few can be run. And the space of schedules is large,
 because at each step the experimenter may choose both the size and the timing of the next
-action in light of everything seen so far. Selecting inputs one step at a time, using the
-outcomes so far to decide the next move, turns experimental design into a sequential
+action in light of the observed history so far. Selecting inputs one step at a time, using the
+outcomes to decide the next move, turns experimental design into a sequential
 control problem over a growing, history-dependent space. Intuition and fixed protocols
 are weak tools here, and exhaustive search is impossible, so the choice has to be made by
-an algorithm that reasons about what each candidate experiment is expected to teach.
+an algorithm that reasons about what each candidate experiment is expected to learn.
 
 Sequential Bayesian experimental design (BED) is the established framework for making
 that choice~\citep{lindley1956measure,chaloner1995bayesian,ryan2016review,rainforth2024modern}.
@@ -33,6 +33,7 @@ expected information gain: the expected reduction in posterior uncertainty about
 parameters after the experiment is run. Running this rule forward produces an adaptive
 sequence of experiments, each chosen in light of the last, which is exactly the regime
 the timed-input problems above require.
+
 
 Applying this framework to real dynamical systems is computationally demanding, for a reason
 that matters throughout the thesis. The expected information gain depends on the marginal
