@@ -133,12 +133,15 @@ or optimiser, so every method trained on it inherits the failure, including the
 reinforcement-learning variants.
 
 The second reason is that the premise that per-trajectory design is inherently weaker than a
-trained policy does not hold. \citet{klein2026supercharging} showed that, with careful design
-optimisation, namely a multiple-restart gradient ascent through a \emph{differentiable} simulator,
-an online per-trajectory method can match or exceed the trained policy. That result depends on simulator gradients and substantial optimisation compute,
-and on stiff ODE systems the required adjoint pass is expensive, numerically delicate, or
-unavailable~\citep{kim2024stiff,pal2023neural}: the promise of per-trajectory design is real, but
-as pursued so far it depends on exactly the gradients these systems cannot reliably supply.
+trained policy does not hold; its earlier underperformance was an optimisation failure rather than
+a fundamental one. \citet{klein2026supercharging} showed that a multiple-restart gradient ascent
+through a \emph{differentiable} simulator lets an online per-trajectory method match or exceed the
+policy, though the demonstration is narrow: it uses hundreds of optimisation restarts on smooth,
+low-dimensional benchmarks, and its own results show the advantage concentrated in the lowest
+dimension and shrinking as the dimension grows. It also depends on simulator gradients, which on
+stiff ODE systems require an adjoint pass that is expensive, numerically delicate, or
+unavailable~\citep{kim2024stiff,pal2023neural}. The promise of per-trajectory design is real, but
+as pursued so far it is confined to small, differentiable problems at a high optimisation cost.
 
 The gap is a per-trajectory method that needs neither a trained policy nor simulator gradients: it
 uses the current posterior, like the per-trajectory family, but scores designs by forward
