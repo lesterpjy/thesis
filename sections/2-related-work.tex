@@ -248,20 +248,29 @@ ODEs, sequentially selecting informative conditions by active learning. These me
 PACE's use of the current posterior, which is what frees them from the $\log(L+1)$ ceiling
 that the prior-contrastive objective imposes on the policy family.
 
-Two limitations have kept this family from being the obvious choice. First, the leading
-methods select designs with gradients taken through the simulator, which on stiff ODE
-solvers needs an adjoint pass that is expensive, numerically delicate, or
-unavailable~\citep{klein2026supercharging,kim2024stiff,pal2023neural}. Second, several of
-them retrain or update the posterior at every step, paying a per-step inference cost that
-amortized policies avoid. The consequence is a regime that has fallen between the two
-families: on stiff, high-information systems, policy training loses its signal to saturation
-while gradient-based per-trajectory design cannot get reliable simulator gradients, so
-neither family is usable. A central empirical claim of this thesis is that a per-trajectory
-method that avoids both costs, by reusing a one-time posterior estimator and scoring designs
-with forward simulations only, not only matches amortized policies on these systems but is
-the only feasible family on the stiffest of them. PACE departs from the methods above by
-using a posterior that is trained once and frozen, and by selecting designs without any
-simulator gradient.
+Until recently this family was considered the weaker option. The consensus, set out in the
+modern review of \citet{rainforth2024modern} and in the comparisons of
+\citet{ivanova2021implicit}, was that amortized policies dominate online per-trajectory
+optimisation on both deployment speed and design quality, the latter because a learned policy is
+non-myopic and avoids the approximate per-step inference that online methods rely on.
+\citet{klein2026supercharging} overturned part of this picture: with a multiple-restart gradient
+ascent that escapes the local optima of the non-convex EIG surface, an SBI-based per-trajectory
+method matches or exceeds the trained policy, which they read as evidence that the achievable
+performance is higher than the field had assumed. Two costs, however, keep the family from being
+the obvious choice on the systems of this thesis. First, the leading methods, Klein's included,
+select designs with gradients taken through the simulator, which on stiff ODE solvers needs an
+adjoint pass that is expensive, numerically delicate, or
+unavailable~\citep{klein2026supercharging,kim2024stiff,pal2023neural}. Second, several of them
+retrain or update the posterior at every step, paying a per-step inference cost that amortized
+policies avoid. The result is a regime that falls between the two families: on stiff,
+high-information systems, policy training loses its signal to saturation while gradient-based
+per-trajectory design cannot obtain reliable simulator gradients, so neither is usable. A central
+empirical claim of this thesis is that a per-trajectory method which avoids both costs, by
+reusing a one-time posterior estimator and scoring designs with forward simulations only, beats
+amortized policies on these systems with far less computation than the gradient-based route, and
+on the stiffest of them is the only feasible choice. PACE departs from the methods above by using
+a posterior that is trained once and frozen, and by selecting designs without any simulator
+gradient.
 
 \section{Classical optimal design for ODE models and model discrimination}
 \label{sec:rw-classical}

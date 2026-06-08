@@ -81,10 +81,12 @@ broad and the observation is highly informative, almost every prior sample is in
 the data and contributes nothing to the average, and the information estimate stalls. We show
 that any such estimator built from $L$ prior samples is capped at $\log(L+1)$ nats, and that the
 number of samples needed to clear the cap grows exponentially with the information per
-experiment. This is a sharp instance of a difficulty already known for variational
-mutual-information estimators, whose accuracy and variance degrade as the true information
-grows~\citep{mcallester2020formal,song2020understanding}, so on these systems no feasible budget
-recovers a usable design signal.
+experiment. This is a sharp instance of a general limitation of sample-based
+mutual-information estimation: any distribution-free lower bound on the information computed
+from $L$ samples is itself capped at order $\log L$~\citep{mcallester2020formal}, while
+estimators that are not so capped instead incur variance that grows exponentially with the true
+information~\citep{song2020understanding}. Either way, no feasible budget recovers a usable
+design signal on these systems.
 
 These three properties are not independent difficulties that one might hope to meet one at a
 time. They are coupled and they co-occur. The same separation of timescales that makes a network
@@ -100,49 +102,65 @@ conditions of the problems. Models in the standard collections of biochemical OD
 dominate modern sequential BED break down, each for a different reason. This thesis explains why
 they break down, and develops a method that does not.
 
-\section{Two families, two failures}
+\section{The amortization consensus and its limits}
 \label{sec:intro-obstacle}
 
-The two families take opposite stances on where to spend computation. \emph{Policy-based}
-methods, beginning with Deep Adaptive
-Design (DAD), train a design network offline against a large set of simulated
-trajectories, so that at deployment each next design is produced by a single fast forward
-pass of the network~\citep{foster2021deep,ivanova2021implicit,hedman2025stepdad}.
-\emph{Per-trajectory} methods skip the offline policy and instead re-optimise the next
-design online, scoring candidate designs against a freshly fitted estimate of the current
-posterior~\citep{klein2026supercharging}. Both perform well on the standard benchmark
-suite of pharmacokinetic compartments, source localisation, and small ODEs, and both lean
-on the same enabling tool: simulation-based inference (SBI), which performs Bayesian
-inference using only samples from the simulator when the likelihood cannot be evaluated in
-closed form~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}.
+Two approaches to sequential design compete, and the field has largely settled on one of them.
+\emph{Policy-based} methods, beginning with Deep Adaptive Design (DAD), train a design network
+offline against a large set of simulated trajectories, so that at deployment each next design is
+produced by a single fast forward pass of the
+network~\citep{foster2021deep,ivanova2021implicit,hedman2025stepdad}. \emph{Per-trajectory}
+methods keep no policy and instead re-optimise the next design online, scoring candidate designs
+against a freshly fitted estimate of the current posterior~\citep{klein2026supercharging}. The
+modern consensus is that the amortized policy is the better choice on both counts that matter.
+It is near-instant at deployment, where the online re-optimisation of the per-trajectory
+approach is often too slow to be practical, and it has also been found to produce
+\emph{higher-quality} designs, by learning non-myopic policies and avoiding the approximate
+per-step inference that online methods rely on~\citep{rainforth2024modern,foster2021deep}. On the
+standard benchmark suite of pharmacokinetic compartments, source localisation, and small ODEs,
+online per-trajectory optimisation has repeatedly been reported to underperform the trained
+policy~\citep{ivanova2021implicit,klein2026supercharging}. Both approaches rest on the same
+enabling tool, simulation-based inference (SBI), which performs Bayesian inference using only
+samples from the simulator when the likelihood cannot be evaluated in closed
+form~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}.
 
-For policy methods the prior-average failure described above takes a precise and damaging
-form. They are trained against the sequential prior-contrastive estimation (sPCE) bound on
-the trajectory information~\citep{foster2019variational,foster2020unified,foster2021deep},
+This thesis shows that the consensus does not hold on the stiff, broad-prior, high-information
+systems described above, and it does so through two cracks. The first is in the policy's own
+training signal. Policy methods are trained against the sequential prior-contrastive estimation
+(sPCE) bound on the trajectory information~\citep{foster2019variational,foster2020unified,foster2021deep},
 which is the prior-averaged contrastive estimator introduced above applied to the whole
 trajectory and so inherits the same $\log(L+1)$
-ceiling~\citep{mcallester2020formal,paninski2005asymptotic}. When a
-single experiment is more informative than this ceiling, almost every prior sample is
-incompatible with the observed trajectory, the bound sits at its ceiling for every
-candidate design, and, as we show, its gradient vanishes at the same rate. The training
-signal then carries no information about which design is better. We show that the number
-of contrastives needed to clear the ceiling grows exponentially with the information per
-experiment, so on stiff high-information systems no feasible contrastive budget recovers a
-usable signal. We call this failure \emph{contrastive saturation}. It is a property of the
-objective, not of any particular network or optimiser, so every method trained on this
-objective inherits it, including the reinforcement-learning variants that optimise the
-same reward without differentiating through the simulator.
+ceiling~\citep{mcallester2020formal,paninski2005asymptotic}. When a single experiment is more
+informative than this ceiling, almost every prior sample is incompatible with the observed
+trajectory, the bound sits at its ceiling for every candidate design, and, as we show, its
+gradient vanishes at the same rate. The training signal then carries no information about which
+design is better, and the contrastive budget needed to clear the ceiling grows exponentially
+with the information per experiment. We call this failure \emph{contrastive saturation}. It is a
+property of the objective, not of any particular network or optimiser, so every method trained
+on it inherits the failure, including the reinforcement-learning variants that optimise the same
+reward without differentiating through the simulator. The amortized policy's claimed superiority
+therefore evaporates exactly on high-information systems, because the signal that would train it
+is gone.
 
-Per-trajectory methods avoid saturation by working with the current posterior rather than
-the prior, which keeps the contrastive samples in the region that matters. But the leading
-methods optimise the next design with gradients taken through the simulator, and on stiff
-ODE solvers this requires an adjoint pass that is expensive, numerically delicate, or
-unavailable~\citep{kim2024stiff,pal2023neural}. Neither family is therefore suited to the
-stiff, broad-prior, high-information systems that motivate this work: one loses its
-training signal, the other needs gradients the simulator cannot supply reliably. The gap
-is a method that uses the current posterior, like the per-trajectory family, but needs
-neither a trained policy nor simulator gradients, and that remains usable when the
-posterior is so concentrated that its importance weights collapse.
+The second crack is that the per-trajectory approach, long treated as the weaker option, can in
+fact match or beat the policy, and on some systems is the only one that works at all.
+\citet{klein2026supercharging} recently challenged the consensus by showing that online
+per-trajectory optimisation, given a multiple-restart gradient ascent through a
+\emph{differentiable} simulator, matches or exceeds the trained policy, and concluded that the
+achievable performance is higher than the field had assumed. That result buys its quality with
+simulator gradients and substantial optimisation compute, and on stiff ODE systems the required
+adjoint pass is expensive, numerically delicate, or
+unavailable~\citep{kim2024stiff,pal2023neural}. The promise of per-trajectory design is real,
+but as pursued so far it is gated behind exactly the gradients that the systems in this thesis
+cannot reliably supply.
+
+The gap is a per-trajectory method that pays for neither failure: it uses the current posterior,
+like the per-trajectory family, but needs neither a trained policy nor simulator gradients. Such
+a method would beat the amortized policy with far less computation than the gradient-based route,
+and on the stiff, saturated systems where policy training is infeasible it would be not merely
+competitive but the only feasible choice, which overturns the view that amortized policies are
+the only route to good deployment performance. The remaining difficulty is that such a method
+must stay usable when the posterior is so concentrated that its importance weights collapse.
 
 \section{Contributions}
 \label{sec:intro-contributions}
