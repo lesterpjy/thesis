@@ -173,8 +173,11 @@ make the denominator a prior marginal, as in the prior-contrastive sPCE; PACE ta
 \emph{per-step} information gain, and its self-normalized weights make the denominator the current
 posterior-predictive. The proposal is a neural posterior estimator trained once, offline, by
 simulation-based inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}:
-particles are drawn from it and corrected to the true posterior by those weights. Drawing the
-contrastives from the posterior in this way is what removes saturation. The second part is a
+particles are drawn from it and corrected to the true posterior by those weights. Because they
+come from the posterior, these contrastives lie where the data are plausible, so they estimate the
+denominator well and the score tracks the true gain instead of pinning at the $\log(L+1)$ ceiling.
+The difficulty is not removed but moved: as the posterior concentrates, the importance weights lose
+effective sample size, a cost transfer we analyse below. The second part is a
 forward-only design optimiser, which chooses each design by scoring candidate designs with PACE
 using forward simulations only, so the design search never differentiates through the simulator.
 The two parts are independent: PACE removes saturation whatever optimiser is used, and the
