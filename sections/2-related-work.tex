@@ -250,9 +250,11 @@ that the prior-contrastive objective imposes on the policy family.
 
 Until recently this family was found to be the weaker option. The review of
 \citet{rainforth2024modern} advocates amortized policies on both deployment speed and design
-quality, and empirical comparisons~\citep{ivanova2021implicit} reported that online per-trajectory
-optimisation underperforms a trained policy, the design-quality gap attributed to the policy being
-non-myopic and to its avoiding the approximate per-step inference that online methods rely on.
+quality, attributing the quality gain to the policy being non-myopic and to its avoiding the
+approximate per-step inference that online methods rely on; \citet{ivanova2021implicit} likewise
+report that their learned policy outperforms costly non-amortized designs. The most direct
+comparison is \citet{zaballa2025bridging}, who build per-trajectory design on SBI density
+estimators and reach a lower information gain than policy-based methods.
 \citet{klein2026supercharging} overturned part of this picture: with a multiple-restart gradient
 ascent that escapes the local optima of the non-convex EIG surface, an SBI-based per-trajectory
 method matches or exceeds the trained policy, which they read as evidence that the achievable
