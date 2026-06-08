@@ -164,10 +164,10 @@ reversing the relationship found on the standard benchmarks.
 \section{Contributions}
 \label{sec:intro-contributions}
 
-This thesis closes that gap with a method in two separable parts. The first is \textbf{PACE}
+This thesis closes that gap with a method in two independent parts. The first is \textbf{PACE}
 (Posterior-Amortized Contrastive Estimation), a posterior-contrastive estimator of the per-step
 information gain. It is an importance-weighted contrastive estimator, like the learned-proposal
-sACE bound stated but never evaluated in \citet{foster2021deep}, but it reweights toward a different
+sequential Adaptive Contrastive Estimation (sACE) bound stated but never evaluated in \citet{foster2021deep}, but it reweights toward a different
 target. sACE bounds the information in the \emph{whole trajectory}, and its contrastive weights
 make the denominator a prior marginal, as in the prior-contrastive sPCE; PACE targets the
 \emph{per-step} information gain, and its self-normalized weights make the denominator the current
@@ -177,12 +177,9 @@ particles are drawn from it and corrected to the true posterior by those weights
 come from the posterior, these contrastives lie where the data are plausible, so they estimate the
 denominator well and the score tracks the true gain instead of pinning at the $\log(L+1)$ ceiling.
 The difficulty is not removed but moved: as the posterior concentrates, the importance weights lose
-effective sample size, a cost transfer we analyse below. The second part is a
+effective sample size, a cost transfer we analyze. Figure~\ref{fig:hero} summarises the idea. The second part is a
 forward-only design optimiser, which chooses each design by scoring candidate designs with PACE
 using forward simulations only, so the design search never differentiates through the simulator.
-The two parts are independent: PACE removes saturation whatever optimiser is used, and the
-forward-only search is what makes the method applicable to the stiff, non-differentiable
-simulators on which gradient-based design fails. Figure~\ref{fig:hero} summarises the idea.
 
 One quantity runs through the whole argument: the likelihood ratio $r_\ell$ between a contrastive
 parameter and the data-generating one. Its average over the prior measures how compatible a typical
@@ -219,8 +216,7 @@ through the method.
   policies remain stronger on low-information, high-dimensional designs. This is the central
   empirical message: a posterior, per-trajectory method does not merely keep pace with
   amortized policies but, on the stiff high-information systems that motivate the work, is
-  the only feasible family. The crossover is predicted by the saturation threshold, not by
-  the effective sample size.
+  the only feasible family.
 \end{enumerate}
 
 
