@@ -466,152 +466,264 @@ distribution and $\mathrm{LogNormal}(\log m,\sigma^2)$ a variable whose natural 
 $\mathcal N(\log m,\sigma^2)$.
 
 \section{CES (constant elasticity of substitution)}
-\textbf{Forward model.} A static utility-comparison model~\citep{foster2021deep,blau2022optimizing}.
-A design $\xi=(\xi^{(1)},\xi^{(2)})\in[0.01,100]^3\times[0.01,100]^3$ presents two
-commodity bundles. With parameters $\theta=(\rho,\alpha_1,\alpha_2,\log u)$ the
-CES utility of a bundle $x$ is $U(x)=\big(\sum_{i=1}^3\alpha_i x_i^{\rho}\big)^{1/\rho}$,
-and the response is the censored sigmoid-normal
+The CES task is a static economic-choice model: a respondent compares two baskets of
+goods and reports a censored preference score. It is a standard adaptive-design benchmark
+across the DAD family~\citep{foster2021deep,blau2022optimizing,hedman2025stepdad}, and it
+has no dynamics, since each of the $T$ steps is an independent query at a new design.
+
+\textbf{Forward model.} A design $\xi=(d_1,d_2)$ presents two baskets, each a vector of
+three nonnegative quantities $d_1,d_2\in[0.01,100]^3$, so $d_\xi=6$. Given parameters
+$\theta=(\rho,\alpha_1,\alpha_2,\log u)$, the respondent's CES utility of a basket
+$d\in\mathbb{R}^3_{\ge 0}$ is
 \[
-y=\sigma(\eta),\quad \eta\sim\mathcal N(\mu_\eta,\sigma_\eta^2),\quad
-\mu_\eta=u\big(U(\xi^{(1)})-U(\xi^{(2)})\big),\quad
-\sigma_\eta=u\,\sigma_0\big(1+\|\xi^{(1)}-\xi^{(2)}\|_2\big),
+U(d)=\Big(\textstyle\sum_{i=1}^3\alpha_i\,d_i^{\rho}\Big)^{1/\rho},
 \]
-with base noise $\sigma_0=0.005$ and $y$ censored to $[\epsilon,1-\epsilon]$,
-$\epsilon=2^{-22}$.
-\textbf{Prior.} $\rho\sim\mathrm{Beta}(1,1)=\mathrm{Uniform}(0,1)$ for elasticity,
-$(\alpha_1,\alpha_2,\alpha_3)\sim\mathrm{Dirichlet}(1,1,1)$ for the simplex weights
-($\alpha_3=1-\alpha_1-\alpha_2$), and $\log u\sim\mathcal N(1,3^2)$ for the scale;
-$d_\theta=4$.
-\textbf{Observation and design.} $d_y=1$, $d_\xi=6$. The censored boundary mass at
-$0$ and $1$ is what destabilises policy training on this system.
+where $\rho\in(0,1]$ is the elasticity of substitution and
+$\alpha=(\alpha_1,\alpha_2,\alpha_3)$ are nonnegative preference weights summing to one.
+The latent preference for basket~$1$ over basket~$2$ is the scaled, clipped utility
+difference $\eta=\mathrm{clip}\big(u\,[U(d_1)-U(d_2)],-20,20\big)$ with sensitivity
+$u=e^{\log u}>0$, and the recorded response is a censored sigmoid-normal draw
+\[
+y=\mathrm{clip}\big(\mathrm{sigmoid}(\eta+s\,\epsilon),\,\varepsilon,\,1-\varepsilon\big),
+\qquad \epsilon\sim\mathcal N(0,1),\qquad
+s=u\,\sigma_0\big(1+\|d_1-d_2\|_2\big),
+\]
+with base noise $\sigma_0=0.005$ and censoring level $\varepsilon=2^{-22}$. The
+observation is the scalar $y\in[\varepsilon,1-\varepsilon]$, so $d_y=1$.
+
+\textbf{Prior.} The elasticity is $\rho\sim\mathrm{Uniform}(0.01,1)$; the preference
+weights are $\alpha\sim\mathrm{Dirichlet}(1,1,1)$ (uniform on the two-simplex), of which
+only the free pair $(\alpha_1,\alpha_2)$ is stored, with $\alpha_3=1-\alpha_1-\alpha_2$;
+and the log-sensitivity is $\log u\sim\mathcal N(1,3^2)$. In total $d_\theta=4$. The
+probability mass that the sigmoid-normal places near the censoring boundaries is the
+heavy-tailed likelihood feature that destabilises gradient-based policy training here.
 
 \section{Source location}
-\textbf{Forward model.} $K=2$ point sources at locations $\theta=(\theta_1,\dots,\theta_K)$,
-$\theta_k\in\mathbb{R}^p$~\citep{foster2021deep}. A sensor at design $\xi\in[-3,3]^p$
-reads the log total signal
+A static geolocation task: two hidden point sources emit a signal, and each design places
+one sensor whose reading is the noisy, log-compressed superposition of the source
+intensities. It is the standard scalable BED
+benchmark~\citep{foster2021deep,klein2026supercharging}, with the per-step design
+dimension $p$ controlling difficulty.
+
+\textbf{Forward model.} The two sources are $\theta=(\theta_1,\theta_2)$ with
+$\theta_k\in\mathbb{R}^p$, and a sensor at design $\xi\in[-3,3]^p$ ($d_\xi=p$) reads the
+field at $M=3$ resolution scales. At scale $m$ the noiseless reading is the log-intensity
 \[
-G(\xi,\theta)=\log\!\Big(\gamma+\sum_{k=1}^{K}\frac{1}{\sigma_s^2+\|\xi-\theta_k\|_2^2}\Big),
-\qquad y=G(\xi,\theta)+\varepsilon,\quad \varepsilon\sim\mathcal N(0,0.5^2),
+G_m(\xi,\theta)=\log\!\Big(b+\sum_{k=1}^{2}\frac{1}{\sigma_m^2+\|\xi-\theta_k\|_2^2}\Big),
+\qquad m=1,2,3,
 \]
-with baseline $\gamma=0.1$ and source bandwidth $\sigma_s^2=10^{-4}$. A multi-resolution
-variant returns $d_y=3$ channels at bandwidths $\sigma_s^2\in\{0.001,0.1,1.0\}$.
-\textbf{Prior.} $\theta_k\sim\mathcal N(0,I_p)$, with the sources ordered by radial
-distance $\|\theta_1\|\le\dots\le\|\theta_K\|$ to break label-switching symmetry; this
-gives $d_\theta=Kp=2p$.
-\textbf{Observation and design.} $d_\xi=p$, with $p\in\{2,5,8\}$ (so $d_\theta\in\{4,10,16\}$).
+with baseline $b=0.1$ and bandwidths $\sigma_1^2=0.001$ (sharp), $\sigma_2^2=0.1$
+(medium), $\sigma_3^2=1.0$ (broad): the sharp kernel localises a nearby source while the
+broad kernel responds to all sources. Each channel has independent additive noise,
+\[
+y_m=G_m(\xi,\theta)+\varepsilon_m,\qquad \varepsilon_m\sim\mathcal N(0,0.5^2),
+\]
+so the per-step observation has $d_y=M=3$ channels.
+
+\textbf{Prior.} Each source is standard normal, $\theta_k\sim\mathcal N(0,I_p)$, and the
+two sources are reordered by increasing distance from the origin
+($\|\theta_1\|_2\le\|\theta_2\|_2$) to break the label-switching symmetry, following
+\citet{klein2026supercharging}. Hence $d_\theta=2p$.
+
+\textbf{Variants.} We report three sizes, $p\in\{2,5,8\}$, giving
+$(d_\theta,d_\xi)=(4,2),(10,5),(16,8)$ with horizons $T=10,30,30$ respectively
+(Table~\ref{tab:config}).
 
 \section{Pharmacokinetics: one compartment}
-\textbf{Forward model.} The iDAD one-compartment model~\citep{ivanova2021implicit}. With
-$\theta=(k_a,k_e,V)$ (absorption rate, elimination rate, volume of distribution) the
-plasma concentration at sampling time $\xi\in[0,24]$\,h after a dose $D=400$\,mg is the
-closed form
+The iDAD one-compartment pharmacokinetic model~\citep{ivanova2021implicit}: a single dose
+is absorbed and eliminated, and each design chooses a blood-sampling time at which the
+plasma concentration is measured. The concentration has a closed form, so no ODE solve is
+needed.
+
+\textbf{Forward model.} With absorption rate $k_a$, elimination rate $k_e$, and volume of
+distribution $V$, so that $\theta=(k_a,k_e,V)$ and $d_\theta=3$, the plasma concentration
+a time $\xi\in[0,24]$\,h after a fixed dose $D=400$ is the closed form
 \[
-C(\xi,\theta)=\frac{D}{V}\,\frac{k_a}{k_a-k_e}\big(e^{-k_e\xi}-e^{-k_a\xi}\big),
-\qquad y\sim\mathcal N\!\big(C,\,\sigma^2(\xi,\theta)\big),\quad
-\sigma^2=(0.1\,C)^2+0.316^2,
+C(\xi,\theta)=\frac{D}{V}\,\frac{k_a}{k_a-k_e}\big(e^{-k_e\xi}-e^{-k_a\xi}\big).
 \]
-a heteroscedastic noise with $10\%$ relative and $\sqrt{0.1}$ absolute components.
-\textbf{Prior.} $\log\theta\sim\mathcal N\big((\log 1.0,\log 0.1,\log 20.0),\,0.05\,I_3\big)$.
-\textbf{Observation and design.} $d_y=1$, $d_\xi=1$, and $d_\theta=3$, the three kinetic
-parameters $(k_a,k_e,V)$, matching the iDAD~\citep{ivanova2021implicit} and
-Klein~\citep{klein2026supercharging} implementations.
+The measurement is heteroscedastic Gaussian, with a proportional and an additive part in
+the standard deviation,
+\[
+y\sim\mathcal N\!\big(C,\,s^2\big),\qquad s=\sqrt{(0.1\,C)^2+0.1},
+\]
+that is, ten percent relative noise plus a variance floor of $0.1$. One sample is taken
+per step, $d_y=1$, $d_\xi=1$.
+
+\textbf{Prior.} The three rates are jointly log-normal,
+$\log\theta\sim\mathcal N\big((\log 1.0,\log 0.1,\log 20.0),\,0.05\,I_3\big)$, so each
+log-parameter is independent normal with variance $0.05$. This matches the
+iDAD~\citep{ivanova2021implicit} and Klein~\citep{klein2026supercharging} setups.
 
 \section{Pharmacokinetics: eight-compartment PBPK}
-\textbf{Forward model.} A permeability-limited physiologically based model with seven
-tissues, central blood, and an oral depot ($16$ internal states). The state vector is
-$(M_{\mathrm{depot}},C_{\mathrm{blood}},\{C_{\mathrm{vas},i},C_{\mathrm{tis},i}\}_{i=1}^7)$,
-governed by the linear system
+A whole-body, permeability-limited physiologically based pharmacokinetic (PBPK) model: a
+twenty-parameter scale-up of the one-compartment task with the same design paradigm
+(choose sampling times, observe plasma concentration) but a structured, high-dimensional
+parameter space. The body is central blood, seven lumped tissues (liver, kidney, gut,
+muscle, adipose, richly-perfused, slowly-perfused), and an oral-dose depot.
+
+\textbf{States and physiology.} Each tissue $i$ is split into a vascular sub-compartment
+(concentration $C_{\mathrm{vas},i}$) and a tissue sub-compartment ($C_{\mathrm{tis},i}$),
+giving $16$ internal states
+$(M_{\mathrm{depot}},C_{\mathrm{blood}},\{C_{\mathrm{vas},i},C_{\mathrm{tis},i}\}_{i=1}^7)$.
+Fixed $70$-kg physiology sets the blood volume $V_{\mathrm{blood}}=5.6$\,L, the tissue
+volumes $V^{\mathrm{tot}}_i$, the vascular fractions $f_{v,i}$ (so that
+$V_{\mathrm{vas},i}=f_{v,i}V^{\mathrm{tot}}_i$ and
+$V_{\mathrm{tis},i}=(1-f_{v,i})V^{\mathrm{tot}}_i$), and the tissue blood flows $Q_i$
+summing to a $390$\,L/h cardiac output.
+
+\textbf{Forward model.} The inferred parameters are partition coefficients $K_{p,i}$,
+permeability-surface products $\mathrm{PS}_i$, hepatic, renal, and gut clearances
+$\mathrm{CL}_h,\mathrm{CL}_r,\mathrm{CL}_{\mathrm{gut}}$, oral absorption rate $k_a$,
+bioavailability $F\in(0,1)$, and unbound plasma fraction $f_{up}\in(0,1)$. The dynamics
+are linear,
 \begin{align*}
 \dot M_{\mathrm{depot}} &= -k_a M_{\mathrm{depot}},\\
-\dot C_{\mathrm{blood}} &= \big(\textstyle\sum_i Q_i(C_{\mathrm{vas},i}-C_{\mathrm{blood}})+k_a F M_{\mathrm{depot}}-\mathrm{CL}_r f_{up}C_{\mathrm{blood}}\big)/V_{\mathrm{blood}},\\
-\dot C_{\mathrm{vas},i} &= \big(Q_i(C_{\mathrm{blood}}-C_{\mathrm{vas},i})-\mathrm{PS}_i(f_{up}C_{\mathrm{vas},i}-C_{\mathrm{tis},i}/K_{p,i})\big)/V_{\mathrm{vas},i},\\
-\dot C_{\mathrm{tis},i} &= \big(\mathrm{PS}_i(f_{up}C_{\mathrm{vas},i}-C_{\mathrm{tis},i}/K_{p,i})-(\mathrm{CL}_h\delta_{\mathrm{liver}}+\mathrm{CL}_{\mathrm{gut}}\delta_{\mathrm{gut}})\,C_{\mathrm{tis},i}/K_{p,i}\big)/V_{\mathrm{tis},i},
+\dot C_{\mathrm{blood}} &= \frac{1}{V_{\mathrm{blood}}}\Big(\textstyle\sum_{i=1}^7 Q_i\big(C_{\mathrm{vas},i}-C_{\mathrm{blood}}\big)+k_a F M_{\mathrm{depot}}-\mathrm{CL}_r f_{up}C_{\mathrm{blood}}\Big),\\
+\dot C_{\mathrm{vas},i} &= \frac{1}{V_{\mathrm{vas},i}}\Big(Q_i\big(C_{\mathrm{blood}}-C_{\mathrm{vas},i}\big)-\mathrm{PS}_i\big(f_{up}C_{\mathrm{vas},i}-C_{\mathrm{tis},i}/K_{p,i}\big)\Big),\\
+\dot C_{\mathrm{tis},i} &= \frac{1}{V_{\mathrm{tis},i}}\Big(\mathrm{PS}_i\big(f_{up}C_{\mathrm{vas},i}-C_{\mathrm{tis},i}/K_{p,i}\big)-\big(\delta_{i,\mathrm{liver}}\mathrm{CL}_h+\delta_{i,\mathrm{gut}}\mathrm{CL}_{\mathrm{gut}}\big)C_{\mathrm{tis},i}/K_{p,i}\Big),
 \end{align*}
-which is solved in closed form by the matrix exponential $y(t)=\exp(A(\theta)t)\,y_0$.
-Physiological constants are fixed at $70$-kg adult values (blood $V_{\mathrm{blood}}=5.6$\,L;
-tissue volumes, vascular fractions, and flows $Q_i$ summing to a $390$\,L/h cardiac
-output). Dosing is a $100$\,mg IV bolus to blood plus a $100$\,mg oral dose to the depot.
+where $\delta_{i,\mathrm{liver}}$ and $\delta_{i,\mathrm{gut}}$ are indicators that switch
+on hepatic and gut elimination for the liver and gut compartments only. Because the depot
+is part of the state, the system is autonomous and linear, $\dot y=A(\theta)y$, and is
+solved exactly by the matrix exponential $y(\xi)=\exp\!\big(A(\theta)\,\xi\big)y_0$.
+Dosing is fixed: a $100$\,mg intravenous bolus enters blood at $t=0$
+($C_{\mathrm{blood}}(0)=100/V_{\mathrm{blood}}$) and a $100$\,mg oral dose loads the depot
+($M_{\mathrm{depot}}(0)=100$); the dual route makes $F$ and $k_a$ jointly identifiable
+from a single plasma trajectory.
+
 \textbf{Prior.} The $d_\theta=20$ parameters are seven partition coefficients
 $K_{p,i}\sim\mathrm{LogNormal}(\log 2,0.3^2)$, seven permeabilities
-$\mathrm{PS}_i\sim\mathrm{LogNormal}(\log 50,0.5^2)$, hepatic/renal/gut clearances
+$\mathrm{PS}_i\sim\mathrm{LogNormal}(\log 50,0.5^2)$, the clearances
 $\mathrm{CL}_h\sim\mathrm{LogNormal}(\log 20,0.4^2)$,
 $\mathrm{CL}_r\sim\mathrm{LogNormal}(\log 10,0.5^2)$,
-$\mathrm{CL}_{\mathrm{gut}}\sim\mathrm{LogNormal}(\log 5,0.5^2)$, absorption
-$k_a\sim\mathrm{LogNormal}(\log 1.5,0.4^2)$, and bioavailability $F$ and unbound
-fraction $f_{up}$, each $\mathrm{sigmoid}(\mathcal N(0,1^2))$. These calibrated, tight
-priors give the system its small escape threshold despite $d_\theta=20$.
-\textbf{Observation and design.} $d_y=1$ (plasma $C_{\mathrm{blood}}$) at sampling time
-$\xi\in[0,24]$\,h, with heteroscedastic noise $\sigma^2=(0.1\,C)^2+0.1$.
+$\mathrm{CL}_{\mathrm{gut}}\sim\mathrm{LogNormal}(\log 5,0.5^2)$, the absorption rate
+$k_a\sim\mathrm{LogNormal}(\log 1.5,0.4^2)$, and the two fractions $F=\mathrm{sigmoid}(z_F)$
+and $f_{up}=\mathrm{sigmoid}(z_{up})$ with $z_F,z_{up}\sim\mathcal N(0,1)$. These tight,
+calibrated priors are what give the system a small escape threshold despite $d_\theta=20$.
+
+\textbf{Observation and design.} A single plasma reading $C_{\mathrm{blood}}$ at each
+sampling time $\xi\in[0,24]$\,h, $d_y=1$, $d_\xi=1$, with the same heteroscedastic noise
+as the one-compartment model, $s=\sqrt{(0.1\,C_{\mathrm{blood}})^2+0.1}$.
 
 \section{PI3K signalling}
-\textbf{Forward model.} A four-state model of iRap-induced PIP3
-signalling~\citep{liang2024structural} with states
-$(y_1,y_2,y_3,y_4)=(\text{irap\_p85},\text{lyn\_irap\_p85},\text{pip3},\text{yfp\_ph\_mem})$
-and conservation laws $\text{cfp\_fkbp\_p85}=1-y_1-y_2$, $\text{lyn\_frb}=1-y_2$,
-$\text{yfp\_ph\_cyt}=1-y_4$. With designs $u_{\mathrm{iRap}},u_{\mathrm{LY29}}$ the fluxes are
-$v_{\mathrm{dimer}}=k_r\,\text{cfp\_fkbp\_p85}\,u_{\mathrm{iRap}}$,
-$v_{\mathrm{trimer}}=k_t\,\text{lyn\_frb}\,y_1$,
-$v_{\mathrm{pi3k}}=y_2/(1+u_{\mathrm{LY29}}/k_{ly})$, $v_{\mathrm{deg}}=\phi\,y_3$,
-$v_{\mathrm{ph}}=k_a\,\text{yfp\_ph\_cyt}\,y_3-\alpha\,y_4$, and
-$\dot y_1=v_{\mathrm{dimer}}-v_{\mathrm{trimer}}$, $\dot y_2=v_{\mathrm{trimer}}$,
-$\dot y_3=v_{\mathrm{pi3k}}-v_{\mathrm{deg}}$, $\dot y_4=v_{\mathrm{ph}}$, from $y(0)=0$.
-\textbf{Prior.} The six parameters $\theta=(k_r,k_t,k_{ly},\phi,k_a,\alpha)$ are
-log-normal about the best-fit values $(1.56,0.03,0.16,1.80,0.58,0.11)$ with log-scale
-$\sigma=0.5$.
-\textbf{Observation and design.} $d_y=2$, the cytosolic readouts
-$(\text{cfp\_fkbp\_p85},\text{yfp\_ph\_cyt})$, with $\mathcal N(0,0.02^2)$ noise; designs
-$u_{\mathrm{iRap}}\in[0,1]$ and $u_{\mathrm{LY29}}\in[0,25]$.
+A four-state model of iRap-induced PIP3 signalling at the plasma
+membrane~\citep{liang2024structural}, read out by FRET microscopy. A chemical dimeriser
+(iRap) recruits PI3K to the membrane, which produces PIP3, reported by a translocating
+fluorescent probe; an inhibitor (LY29) blocks PI3K. The two designs are the iRap and LY29
+doses.
 
-\section{Monod and Haldane bioreactors}
-\textbf{Forward model.} Fed-batch bioreactors~\citep{monod1949growth,strouwen2026deep}
-with state $(C_s,C_x,V)$ (substrate, biomass, volume), feed rate $\xi=Q_{\mathrm{in}}\in[0,6]$,
-yield $Y_{xs}=0.777$, feed concentration $C_{s,\mathrm{in}}=50$, and
-$\dot C_s=-\mu C_x/Y_{xs}+Q_{\mathrm{in}}(C_{s,\mathrm{in}}-C_s)/V$,
-$\dot C_x=\mu C_x-Q_{\mathrm{in}}C_x/V$, $\dot V=Q_{\mathrm{in}}$, from $(3,0.3,7)$.
-Monod growth is $\mu=\mu_{\max}C_s/(K_s+C_s)$; the Haldane variant adds substrate
-inhibition, $\mu=\mu_{\max}C_s/(K_s+C_s+\alpha C_s^2)$.
-\textbf{Prior.} Monod ($d_\theta=2$): $\mu_{\max}\sim\mathrm{Uniform}(0.3,0.5)$,
-$K_s\sim\mathrm{Uniform}(0.3,0.6)$. Haldane ($d_\theta=1$): $\alpha\sim\mathrm{Uniform}(0,0.15)$
-with $\mu_{\max}=0.4$, $K_s=0.45$ fixed.
-\textbf{Observation and design.} $d_y=1$ (substrate $C_s$), $\mathcal N(0,0.1^2)$ noise;
-$d_\xi=1$. Haldane appears only in the saturation survey.
+\textbf{States and conservation.} Write the four independent states as
+$x=(x_1,x_2,x_3,x_4)$: $x_1$ is the iRap-p85 complex, $x_2$ the membrane-recruited
+Lyn-iRap-p85 complex, $x_3$ the second messenger PIP3, and $x_4$ the membrane-bound
+YFP-PH probe. Three conservation laws (all totals equal to one, in arbitrary fluorescence
+units) give the dependent quantities $c_{\mathrm{cfp}}=1-x_1-x_2$ (free CFP-FKBP-p85),
+$\ell=1-x_2$ (free Lyn-FRB), and $x_{\mathrm{cyt}}=1-x_4$ (cytosolic probe).
 
-\section{DC motor}
-\textbf{Forward model.} A two-state electromechanical system (current $i$, angular
-velocity $\omega$)~\citep{strouwen2026deep}, used only in the saturation survey:
-$\dot i=(V_{\mathrm{in}}-R\,i-k\,\omega)/L_a$, $\dot\omega=(k\,i-f\,\omega)/J_m$, from
-$(0,0)$, with $R=0.5$, $L_a=0.0045$, friction $f=0.0125$ fixed and voltage design
-$V_{\mathrm{in}}\in[0,10]$.
-\textbf{Prior.} $d_\theta=2$: $k\sim\mathrm{Uniform}(0.3,0.7)$,
-$J_m\sim\mathrm{Uniform}(0.01,0.04)$.
-\textbf{Observation.} $d_y=1$ ($\omega$), $\mathcal N(0,1^2)$ noise.
+\textbf{Forward model.} With parameters $\theta=(k_r,k_t,k_{ly},\phi,k_a,\alpha)$ and
+designs $u=(u_{\mathrm{iRap}},u_{\mathrm{LY29}})$, the reaction fluxes are
+\[
+v_{\mathrm{dimer}}=k_r\,c_{\mathrm{cfp}}\,u_{\mathrm{iRap}},\quad
+v_{\mathrm{trimer}}=k_t\,\ell\,x_1,\quad
+v_{\mathrm{pi3k}}=\frac{x_2}{1+u_{\mathrm{LY29}}/k_{ly}},\quad
+v_{\mathrm{deg}}=\phi\,x_3,\quad
+v_{\mathrm{ph}}=k_a\,x_{\mathrm{cyt}}\,x_3-\alpha\,x_4,
+\]
+where $k_r$ is the dimerisation rate, $k_t$ the membrane-recruitment rate, $k_{ly}$ the
+LY29 inhibition constant, $\phi$ the PIP3 degradation rate, and $k_a,\alpha$ the probe
+binding and unbinding rates. The state derivatives are
+\[
+\dot x_1=v_{\mathrm{dimer}}-v_{\mathrm{trimer}},\quad
+\dot x_2=v_{\mathrm{trimer}},\quad
+\dot x_3=v_{\mathrm{pi3k}}-v_{\mathrm{deg}},\quad
+\dot x_4=v_{\mathrm{ph}},
+\]
+from $x(0)=0$.
+
+\textbf{Prior.} The six positive rates $\theta=(k_r,k_t,k_{ly},\phi,k_a,\alpha)$ are
+log-normal about the published best-fit values,
+\[
+\log\theta\sim\mathcal N\big(\log(1.56,0.03,0.16,1.80,0.58,0.11),\,0.5^2 I_6\big).
+\]
+
+\textbf{Observation and design.} The two measured channels are the cytosolic fluorescence
+readouts $(c_{\mathrm{cfp}},x_{\mathrm{cyt}})$, $d_y=2$, with additive noise
+$\mathcal N(0,0.02^2)$; the designs are the iRap dose $u_{\mathrm{iRap}}\in[0,1]\,\mu$M
+and the LY29 dose $u_{\mathrm{LY29}}\in[0,25]\,\mu$M ($d_\xi=2$), applied as eight
+piecewise-constant three-minute intervals over $24$ minutes.
+
+\section{Monod bioreactor}
+A fed-batch bioreactor with Monod growth kinetics~\citep{monod1949growth,strouwen2026deep}:
+a microbial culture consumes a feed substrate, and the single design is the feed rate. The
+dynamics are a mildly stiff ODE.
+
+\textbf{Forward model.} The state $(C_s,C_x,V)$ is the substrate concentration (g/L), the
+biomass concentration (g/L), and the broth volume (L). The specific growth rate is the
+Monod form $\mu=\mu_{\max}C_s/(K_s+C_s)$, and with fixed yield $Y_{xs}=0.777$, fixed feed
+concentration $C_{s,\mathrm{in}}=50$\,g/L, and feed rate $\xi=Q_{\mathrm{in}}\in[0,6]$\,L/h,
+\[
+\dot C_s=-\frac{\mu}{Y_{xs}}C_x+\frac{Q_{\mathrm{in}}}{V}\big(C_{s,\mathrm{in}}-C_s\big),
+\qquad
+\dot C_x=\mu C_x-\frac{Q_{\mathrm{in}}}{V}C_x,
+\qquad
+\dot V=Q_{\mathrm{in}},
+\]
+from $(C_s,C_x,V)(0)=(3,0.3,7)$, run as $14$ hourly steps.
+
+\textbf{Prior.} $d_\theta=2$, uniform: $\mu_{\max}\sim\mathrm{Uniform}(0.3,0.5)$ and
+$K_s\sim\mathrm{Uniform}(0.3,0.6)$.
+
+\textbf{Observation and design.} $d_y=1$ (the substrate $C_s$) with $\mathcal N(0,0.1^2)$
+noise; $d_\xi=1$. The weak sensitivity of $C_s$ to $(\mu_{\max},K_s)$ over feasible feed
+rates gives Monod a low information content, which is why it is a predicted counter-case
+where a trajectory policy can still help.
 
 \section{Goodwin oscillator}
-\textbf{Forward model.} A three-state negative-feedback oscillator~\citep{strouwen2026deep}
-with mRNA, protein, and product $(X,Y,Z)$ and a high-cooperativity Hill repression,
-$\dot X=V_s K^n/(K^n+Z^n)-k_d X+u$, $\dot Y=k_t X-k_d Y$, $\dot Z=k_t Y-k_d Z$, from
-$(0.1,0.1,0.1)$, with transcriptional input design $u\in[0,1]$.
-\textbf{Prior.} $d_\theta=5$: $V_s,K,k_d,k_t$ log-normal about $(0.5,1.0,0.1,1.0)$ with
-log-scale $\sigma=0.4$, and the Hill exponent $n\sim\mathcal N(12,1.5^2)$ truncated to
-$n>7$. The high $n$ creates the identifiability plateau that makes Goodwin a predicted
-counter-case.
-\textbf{Observation and design.} $d_y=1$ ($X$), $\mathcal N(0,0.05^2)$ noise; $d_\xi=1$.
+A three-variable gene-regulatory oscillator~\citep{strouwen2026deep}: an mRNA drives a
+protein, which drives a downstream species that represses transcription through a steep
+Hill term. The design is an external transcriptional input.
 
-\section{Repressilator}
-\textbf{Forward model.} A six-state synthetic oscillator (three mRNAs $m_{1:3}$, three
-proteins $P_{1:3}$) in cyclic repression, used only in the saturation survey:
-$\dot m_i=\gamma-\delta m_i+\alpha K^n/(P_{j(i)}^n+K^n)+u\,[i{=}1]$ and
-$\dot P_i=\beta m_i-\mu P_i$, with $P_{j(1)}=P_3,P_{j(2)}=P_1,P_{j(3)}=P_2$, fixed mRNA
-decay $\delta=0.0025$, and inducer design $u\in[0,0.5]$ on gene~1.
-\textbf{Prior.} $d_\theta=6$: $\alpha,K,\beta,\gamma,\mu$ log-normal about
-$(0.5,40,0.05,0.005,0.005)$, and $n\sim\mathcal N(2,0.5^2)$ truncated to $n>1.5$.
-\textbf{Observation.} $d_y=1$ ($P_1$), $\mathcal N(0,5^2)$ noise.
+\textbf{Forward model.} The state $(X,Y,Z)$ is the mRNA, protein, and downstream product.
+With parameters $\theta=(V_s,K,n,k_d,k_t)$ and scalar input $u\in[0,1]$,
+\[
+\dot X=\frac{V_s\,K^n}{K^n+Z^n}-k_d X+u,
+\qquad
+\dot Y=k_t X-k_d Y,
+\qquad
+\dot Z=k_t Y-k_d Z,
+\]
+from $(X,Y,Z)(0)=(0.1,0.1,0.1)$. Here $V_s$ is the maximum transcription rate, $K$ the
+repression threshold, $n$ the Hill cooperativity, $k_d$ a shared degradation rate, and
+$k_t$ the translation and conversion rate.
+
+\textbf{Prior.} The parameters are stored in the order $(V_s,K,n,k_d,k_t)$, $d_\theta=5$.
+The four positive rates are log-normal about $(V_s,K,k_d,k_t)=(0.5,1.0,0.1,1.0)$ with
+log-scale $0.4$, that is $\log V_s\sim\mathcal N(\log 0.5,0.4^2)$ and likewise for
+$K,k_d,k_t$. The Hill exponent is $n=\max(12+1.5\,z,\,7)$ with $z\sim\mathcal N(0,1)$: a
+normal centred at $12$ with scale $1.5$, floored at $7$ to keep the system in its
+oscillatory regime. The high cooperativity produces a steep, nearly flat identifiability
+landscape, which makes Goodwin a predicted counter-case.
+
+\textbf{Observation and design.} $d_y=1$ (the mRNA $X$) with $\mathcal N(0,0.05^2)$ noise;
+$d_\xi=1$.
 
 \section{ASM1 wastewater}
-\textbf{Forward model.} Activated Sludge Model No.\ 1~\citep{henze2000activated}, a
-stiff $13$-state ODE solved with an implicit integrator. The state is
-$(S_I,S_S,X_I,X_S,X_{BH},X_{BA},X_P,S_O,S_{NO},S_{NH},S_{ND},X_{ND},S_{ALK})$, driven by
-eight processes
+Activated Sludge Model No.~1~\citep{henze2000activated}, the standard biokinetic model of
+a wastewater aeration tank. We use a single continuous-flow stirred-tank configuration in
+which $13$ state concentrations evolve under eight microbial processes, with the aeration
+rate and the sludge wastage as designs. The ODE is stiff and is integrated with an
+implicit solver.
+
+\textbf{States.} The state vector is
+\[
+(S_I,S_S,X_I,X_S,X_{BH},X_{BA},X_P,S_O,S_{NO},S_{NH},S_{ND},X_{ND},S_{ALK}),
+\]
+comprising inert and readily-biodegradable soluble COD ($S_I,S_S$); inert,
+slowly-biodegradable, heterotroph, autotroph, and inert-particulate COD
+($X_I,X_S,X_{BH},X_{BA},X_P$); dissolved oxygen ($S_O$); nitrate and ammonia nitrogen
+($S_{NO},S_{NH}$); soluble and particulate organic nitrogen ($S_{ND},X_{ND}$); and
+alkalinity ($S_{ALK}$). All concentrations are in mg/L.
+
+\textbf{Process rates.} With Monod saturation switches, the eight process rates are
 \begin{align*}
 \rho_0 &= \mu_H\tfrac{S_S}{K_S+S_S}\tfrac{S_O}{K_{OH}+S_O}X_{BH}, &
 \rho_1 &= \mu_H\tfrac{S_S}{K_S+S_S}\tfrac{K_{OH}}{K_{OH}+S_O}\tfrac{S_{NO}}{K_{NO}+S_{NO}}\eta_g X_{BH},\\
@@ -620,43 +732,119 @@ eight processes
 \rho_6 &= k_h\tfrac{X_S/X_{BH}}{K_X+X_S/X_{BH}}\big(\tfrac{S_O}{K_{OH}+S_O}+\eta_h\tfrac{K_{OH}}{K_{OH}+S_O}\tfrac{S_{NO}}{K_{NO}+S_{NO}}\big)X_{BH}, &
 \rho_7 &= \rho_6\,X_{ND}/X_S,
 \end{align*}
-combined through the standard ASM1 Petersen stoichiometry into the $13$ state
-derivatives (with a continuous-flow term $Q/V=4\,\mathrm{d}^{-1}$, oxygen transfer
-$k_La(S_{O,\mathrm{sat}}-S_O)$, $S_{O,\mathrm{sat}}=8$, and waste term $Q_w$ on the
-particulates). Fixed coefficients are $Y_A=0.24$, $F_P=0.08$, $i_{XB}=0.086$,
-$i_{XP}=0.06$, $K_{NO}=0.5$, $K_{OA}=0.4$, $\eta_h=0.4$, with fixed influent
-concentrations.
-\textbf{Prior.} The $d_\theta=12$ kinetic parameters are log-normal about their BSM1
-nominal values: $\mu_H\,(6.0)$, $K_S\,(20)$, $K_{OH}\,(0.2)$, $\mu_A\,(0.8)$,
-$K_{NH}\,(1.0)$, $b_H\,(0.62)$, $b_A\,(0.15)$, $\eta_g\,(0.8)$, $k_h\,(3.0)$,
-$K_X\,(0.03)$, $k_a\,(0.08)$, and yield $Y_H\,(0.67)$, with log-scale $\sigma$ between
-$0.19$ and $0.62$ per parameter.
+the aerobic and anoxic heterotrophic growth, autotrophic growth, heterotrophic and
+autotrophic decay, ammonification, and the two hydrolysis processes.
+
+\textbf{Mass balances.} The processes enter the $13$ states through the ASM1 Petersen
+stoichiometry, together with a continuous-flow exchange at $Q/V=4\,\mathrm{d}^{-1}$ (a
+fixed $6$\,h hydraulic residence time), aeration $k_La(S_{O,\mathrm{sat}}-S_O)$ added to
+oxygen with saturation $S_{O,\mathrm{sat}}=8$, and a wastage term $Q_w$ on the
+particulate states:
+\begin{align*}
+\dot S_I &= \tfrac{Q}{V}\big(S_I^{\mathrm{in}}-S_I\big),\\
+\dot S_S &= -\tfrac{1}{Y_H}\rho_0-\tfrac{1}{Y_H}\rho_1+\rho_6+\tfrac{Q}{V}\big(S_S^{\mathrm{in}}-S_S\big),\\
+\dot X_I &= \tfrac{Q}{V}X_I^{\mathrm{in}}-Q_w X_I,\\
+\dot X_S &= (1-f_P)\rho_3+(1-f_P)\rho_4-\rho_6+\tfrac{Q}{V}X_S^{\mathrm{in}}-Q_w X_S,\\
+\dot X_{BH} &= \rho_0+\rho_1-\rho_3-Q_w X_{BH},\qquad
+\dot X_{BA} = \rho_2-\rho_4-Q_w X_{BA},\qquad
+\dot X_P = f_P\rho_3+f_P\rho_4-Q_w X_P,\\
+\dot S_O &= -\tfrac{1-Y_H}{Y_H}\rho_0-\tfrac{4.57-Y_A}{Y_A}\rho_2+k_La\big(S_{O,\mathrm{sat}}-S_O\big)-\tfrac{Q}{V}S_O,\\
+\dot S_{NO} &= -\tfrac{1-Y_H}{2.86\,Y_H}\rho_1+\tfrac{1}{Y_A}\rho_2-\tfrac{Q}{V}S_{NO},\\
+\dot S_{NH} &= -i_{XB}\rho_0-i_{XB}\rho_1-\big(i_{XB}+\tfrac{1}{Y_A}\big)\rho_2+\rho_5+\tfrac{Q}{V}\big(S_{NH}^{\mathrm{in}}-S_{NH}\big),\\
+\dot S_{ND} &= -\rho_5+\rho_7+\tfrac{Q}{V}\big(S_{ND}^{\mathrm{in}}-S_{ND}\big),\\
+\dot X_{ND} &= (i_{XB}-f_P i_{XP})\rho_3+(i_{XB}-f_P i_{XP})\rho_4-\rho_7+\tfrac{Q}{V}X_{ND}^{\mathrm{in}}-Q_w X_{ND},\\
+\dot S_{ALK} &= -\tfrac{i_{XB}}{14}\rho_0+\Big(\tfrac{1-Y_H}{14\cdot2.86\,Y_H}-\tfrac{i_{XB}}{14}\Big)\rho_1-\big(\tfrac{i_{XB}}{14}+\tfrac{1}{7\,Y_A}\big)\rho_2+\tfrac{1}{14}\rho_5+\tfrac{Q}{V}\big(S_{ALK}^{\mathrm{in}}-S_{ALK}\big).
+\end{align*}
+
+\textbf{Fixed coefficients.} $Y_A=0.24$, $f_P=0.08$, $i_{XB}=0.086$, $i_{XP}=0.06$,
+$K_{NO}=0.5$, $K_{OA}=0.4$, $\eta_h=0.4$, and $S_{O,\mathrm{sat}}=8$. The fixed influent
+concentrations are $(S_I,S_S,X_I,X_S,S_{NH},S_{ND},X_{ND},S_{ALK})^{\mathrm{in}}=
+(30,70,50,200,30,7,10,7)$, with influent oxygen and nitrate zero, and the initial state
+is $x_0=(30,5,50,80,2000,150,100,2,8,2,1,5,7)$.
+
+\textbf{Prior.} The $d_\theta=12$ kinetic parameters are independently log-normal about
+their nominal values, $\log\theta_j\sim\mathcal N(\log m_j,\sigma_j^2)$. The nominal value
+$m_j$ and log-scale $\sigma_j$ of each, written as $\theta_j:(m_j,\sigma_j)$, are
+\[
+\begin{array}{llll}
+\mu_H:(6.0,\,0.45) & K_S:(20,\,0.62) & K_{OH}:(0.2,\,0.58) & \mu_A:(0.8,\,0.40)\\[2pt]
+K_{NH}:(1.0,\,0.58) & b_H:(0.62,\,0.45) & b_A:(0.15,\,0.45) & \eta_g:(0.8,\,0.23)\\[2pt]
+k_h:(3.0,\,0.52) & K_X:(0.03,\,0.58) & k_a:(0.08,\,0.58) & Y_H:(0.67,\,0.19).
+\end{array}
+\]
+
 \textbf{Observation and design.} $d_y=4$, the effluent quality variables
-$(S_S,S_{NH},S_{NO},S_O)$ with heteroscedastic noise
-$\sigma=\sqrt{(0.05\,y)^2+0.5^2}$; designs are the aeration rate $k_La\in[10,300]$ and
-the waste-sludge fraction $Q_w\in[0.01,0.2]$. The stiffness and the resulting adjoint
+$(S_S,S_{NH},S_{NO},S_O)$ with heteroscedastic noise $s=\sqrt{(0.05\,y)^2+0.5^2}$ (five
+percent proportional plus a $0.5$ floor); the designs are the aeration coefficient
+$k_La\in[10,300]\,\mathrm{d}^{-1}$ and the waste-sludge fraction
+$Q_w\in[0.01,0.2]\,\mathrm{d}^{-1}$, $d_\xi=2$. The stiffness and the resulting adjoint
 cost are what make policy training infeasible here.
 
 \section{Multi-region SEIR}
-\textbf{Forward model.} $R$ coupled regions, each with $(S_r,E_r,I_r,R_r)$ and
-population $N=10^4$. With total infection $\textstyle\sum_r I_r$ and cross-region
-pressure $\mathrm{cross}_r=\kappa(\sum_{r'}I_{r'}-I_r)$, and per-region designs
-$(v_r,d_r,\tau_r)$ (vaccination, distancing, treatment),
+An epidemic model over $R$ coupled regions, each an SEIR compartment model, with
+per-region interventions as designs. It is the high-information, stiff dynamical anchor of
+the suite.
+
+\textbf{Forward model.} Region $r$ has states $(S_r,E_r,I_r,R_r)$, the susceptible,
+exposed, infectious, and removed counts, with a fixed population $N=10^4$. Infection
+couples across regions through $\mathrm{eff}_r=I_r+\kappa\sum_{j\ne r}I_j$, a weighted sum
+of local and imported infectious counts with coupling strength $\kappa$. With shared
+incubation rate $\sigma$, recovery rate $\gamma$, per-region transmission rates $\beta_r$,
+and intervention efficacies $\varepsilon_v,\varepsilon_d,\varepsilon_t$ (vaccination,
+distancing, treatment), and per-region designs $(v_r,d_r,\tau_r)$,
 \begin{align*}
-\dot S_r &= -\beta_r(1-\varepsilon_d d_r)S_r(I_r+\mathrm{cross}_r)/N-v_r\varepsilon_v S_r, &
-\dot E_r &= \beta_r(1-\varepsilon_d d_r)S_r(I_r+\mathrm{cross}_r)/N-\sigma E_r,\\
+\dot S_r &= -\beta_r(1-\varepsilon_d d_r)\,S_r\,\mathrm{eff}_r/N-v_r\varepsilon_v S_r, &
+\dot E_r &= \beta_r(1-\varepsilon_d d_r)\,S_r\,\mathrm{eff}_r/N-\sigma E_r,\\
 \dot I_r &= \sigma E_r-\gamma I_r-\tau_r\varepsilon_t I_r, &
 \dot R_r &= \gamma I_r+\tau_r\varepsilon_t I_r+v_r\varepsilon_v S_r,
 \end{align*}
-from $S_r(0)=N-I_0$, $I_r(0)=I_0=10$, $E_r(0)=R_r(0)=0$.
-\textbf{Prior.} $d_\theta=6+R$: shared $\sigma\sim\mathrm{LogNormal}(\log 0.2,0.3^2)$,
-$\gamma\sim\mathrm{LogNormal}(\log 0.1,0.3^2)$, $\kappa\sim\mathrm{LogNormal}(\log 0.05,0.5^2)$;
-per-region $\beta_r\sim\mathrm{LogNormal}(\log 0.4,0.5^2)$; and efficacies
-$\varepsilon_v,\varepsilon_d,\varepsilon_t\sim\mathrm{Beta}(2,2)$.
-\textbf{Observation and design.} $d_y=2R$ (exposed and infected per region) with
-lognormal noise of scale $0.15$; $d_\xi=3R$ with $v_r\in[0,0.05]$, $d_r\in[0,1]$,
-$\tau_r\in[0,0.5]$. We use $R=3$ as the main system ($d_\theta=9$); $R=5$ and $R=8$
-appear in the saturation survey.
+from $(S_r,E_r,I_r,R_r)(0)=(N-I_0,0,I_0,0)$ with $I_0=10$, integrated in steps of two
+days.
+
+\textbf{Prior.} $d_\theta=6+R$. The shared rates are
+\[
+\sigma\sim\mathrm{LogNormal}(\log 0.2,0.3^2),\quad
+\gamma\sim\mathrm{LogNormal}(\log 0.1,0.3^2),\quad
+\kappa\sim\mathrm{LogNormal}(\log 0.05,0.5^2),
+\]
+the per-region transmission is $\beta_r\sim\mathrm{LogNormal}(\log 0.4,0.5^2)$, and the
+efficacies are $\varepsilon_v,\varepsilon_d,\varepsilon_t\sim\mathrm{Beta}(2,2)$.
+
+\textbf{Observation and design.} The observation is the exposed and infectious counts of
+every region, stacked as $(E_1,\dots,E_R,I_1,\dots,I_R)$, $d_y=2R$, measured with
+multiplicative lognormal noise $y=\mu\,e^{0.15\,\epsilon}$, $\epsilon\sim\mathcal N(0,1)$,
+where $\mu$ is the clean count. The design is $(v_r,d_r,\tau_r)_{r=1}^R$, $d_\xi=3R$, with
+$v_r\in[0,0.05]$, $d_r\in[0,1]$, $\tau_r\in[0,0.5]$. We report $R=3$ as the main system
+($d_\theta=9$, $d_\xi=9$, $d_y=6$); the larger $R=8$ appears only as a high-dimensional
+diagnostic in the saturation survey ($d_\theta=14$, $d_\xi=24$, $d_y=16$;
+Table~\ref{tab:escape-full}).
+
+\section{Synthetic Michaelis-Menten cascade (controlled toy)}
+This is the controlled system behind the cost-shift demonstration of
+Section~\ref{sec:r-toy} and Figure~\ref{fig:toy}. It is a synthetic three-species enzyme
+cascade, chosen to be small enough to admit a near-exact reference posterior by prior
+importance sampling, yet to reproduce the saturation regime in kind: kinetic rate
+constants, a four-order-of-magnitude prior, lognormal noise, and a multi-step trajectory.
+
+\textbf{Forward model.} Three species react in sequence $A\to B\to C$ through saturating
+Michaelis-Menten steps. With maximal rates $V_1,V_2,V_3$, half-saturation constants
+$K_1,K_2,K_3$, and fluxes $f_1=V_1A/(K_1+A)$, $f_2=V_2B/(K_2+B)$, $f_3=V_3C/(K_3+C)$,
+\[
+\dot A=-f_1,\qquad \dot B=f_1-f_2,\qquad \dot C=f_2-f_3,
+\]
+from initial condition $A(0)=\xi$, $B(0)=C(0)=0$. The single design $\xi=A(0)\in[0.1,100]$
+sets the initial substrate amount ($d_\xi=1$). The three species are observed at $T=10$
+evenly spaced times in $(0,5]$ with multiplicative lognormal noise
+$y=\mu\,e^{0.1\,\epsilon}$, $\epsilon\sim\mathcal N(0,1)$, so $d_y=3$ channels per time.
+
+\textbf{Prior.} The six parameters are inferred in log space, $\theta=(\log V_1,\log K_1,
+\log V_2,\log K_2,\log V_3,\log K_3)$, each independent and uniform over four orders of
+magnitude, $\log\theta_j\sim\mathrm{Uniform}(\log 0.01,\log 100)$; hence $d_\theta=6$.
+
+\textbf{Configuration.} The cost-shift demonstration uses a prior-contrastive budget
+$L=2000$ and a posterior-contrastive budget $J=200$, sweeping the NPE training budget
+$N_{\mathrm{NPE}}$ from $10^2$ to $5\times10^4$ (Figure~\ref{fig:toy}). The toy is not part
+of the deployed benchmark suite of Table~\ref{tab:config}.
 
 \begin{table}[h]
 \centering\footnotesize
