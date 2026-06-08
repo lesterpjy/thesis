@@ -170,7 +170,7 @@ Hill-kinetic systems exceed $e^\Lambda$ by one to three orders of magnitude.}
 System & $d_\theta$ & $d_\xi$ & $\Lambda$ & $e^{\Lambda}$ & $L_{\mathrm{escape},50}$ \\
 \midrule
 PK 8-comp & 20 & 1 & $0.05$ & $1.1$ & ${\le}10$ \\
-PK 1-comp & 4 & 1 & $1.02$ & $2.8$ & ${\sim}10$ \\
+PK 1-comp & 3 & 1 & $1.02$ & $2.8$ & ${\sim}10$ \\
 PI3K      & 6 & 2 & $1.49$ & $4.4$ & ${\le}10$ \\
 Monod     & 2 & 1 & $4.30$ & $74$ & ${\sim}30$ \\
 CES       & 4 & 6 & -- & -- & ${\sim}10^4$ (static) \\
@@ -512,9 +512,9 @@ C(\xi,\theta)=\frac{D}{V}\,\frac{k_a}{k_a-k_e}\big(e^{-k_e\xi}-e^{-k_a\xi}\big),
 \]
 a heteroscedastic noise with $10\%$ relative and $\sqrt{0.1}$ absolute components.
 \textbf{Prior.} $\log\theta\sim\mathcal N\big((\log 1.0,\log 0.1,\log 20.0),\,0.05\,I_3\big)$.
-\textbf{Observation and design.} $d_y=1$, $d_\xi=1$. The forward map exposes three
-kinetic parameters; the results tables report $d_\theta=4$, a discrepancy to reconcile
-(it counts an additional inferred scale).% TODO(verify PK 1-comp parameter count vs tab:config)
+\textbf{Observation and design.} $d_y=1$, $d_\xi=1$, and $d_\theta=3$, the three kinetic
+parameters $(k_a,k_e,V)$, matching the iDAD~\citep{ivanova2021implicit} and
+Klein~\citep{klein2026supercharging} implementations.
 
 \section{Pharmacokinetics: eight-compartment PBPK}
 \textbf{Forward model.} A permeability-limited physiologically based model with seven
@@ -679,8 +679,8 @@ Goodwin & 5 & 1 & 10 & CEM & 1000 & 1000 & 1 & $5{\times}10^3$ \\
 Src.\ loc.\ $p{=}2$ & 4 & 2 & 10 & CEM & 1000 & 1000 & 1 & $10^5$ \\
 Src.\ loc.\ $p{=}5$ & 10 & 5 & 30 & CEM & 1000 & 1000 & 1 & $10^5$ \\
 Src.\ loc.\ $p{=}8$ & 16 & 8 & 30 & CEM & 1000 & 1000 & 1 & $10^5$ \\
-PK 1-comp $T{=}3$ & 4 & 1 & 3 & CEM & 1000 & 1000 & 1 & $2{\times}10^3$ \\
-PK 1-comp $T{=}5$ & 4 & 1 & 5 & CEM & 1000 & 1000 & 1 & $2{\times}10^3$ \\
+PK 1-comp $T{=}3$ & 3 & 1 & 3 & CEM & 1000 & 1000 & 1 & $2{\times}10^3$ \\
+PK 1-comp $T{=}5$ & 3 & 1 & 5 & CEM & 1000 & 1000 & 1 & $2{\times}10^3$ \\
 PK 8-comp & 20 & 1 & 5 & CEM & 1000 & 1000 & 1 & $2{\times}10^3$ \\
 PI3K & 6 & 2 & 8 & CEM & 1000 & 1000 & 1 & $10^5$ \\
 \bottomrule
