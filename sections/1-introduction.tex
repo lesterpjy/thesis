@@ -165,16 +165,16 @@ reversing the relationship found on the standard benchmarks.
 \label{sec:intro-contributions}
 
 This thesis closes that gap with a method in two separable parts. The first is \textbf{PACE}
-(Posterior-Amortized Contrastive Estimation), an estimator of the per-step information gain. PACE
-adapts the sequential adaptive contrastive estimator (sACE), the learned-proposal bound stated but
-never evaluated in \citet{foster2021deep}, in two ways. First, sACE bounds the information in the
-\emph{whole trajectory}, with its contrastives reweighted toward the prior so that its denominator
-is a prior marginal, as in the prior-contrastive sPCE; PACE instead targets the \emph{per-step}
-information gain, whose denominator is the current posterior-predictive. Second, PACE supplies the
-proposal from a neural posterior estimator trained once, offline, by simulation-based
-inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}: particles are drawn
-from this estimator and corrected to the true posterior by self-normalized importance weights.
-Drawing the contrastives from the posterior in this way is what removes saturation. The second part is a
+(Posterior-Amortized Contrastive Estimation), a posterior-contrastive estimator of the per-step
+information gain. It is an importance-weighted contrastive estimator, like the learned-proposal
+sACE bound stated but never evaluated in \citet{foster2021deep}, but it reweights toward a different
+target. sACE bounds the information in the \emph{whole trajectory}, and its contrastive weights
+make the denominator a prior marginal, as in the prior-contrastive sPCE; PACE targets the
+\emph{per-step} information gain, and its self-normalized weights make the denominator the current
+posterior-predictive. The proposal is a neural posterior estimator trained once, offline, by
+simulation-based inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}:
+particles are drawn from it and corrected to the true posterior by those weights. Drawing the
+contrastives from the posterior in this way is what removes saturation. The second part is a
 forward-only design optimiser, which chooses each design by scoring candidate designs with PACE
 using forward simulations only, so the design search never differentiates through the simulator.
 The two parts are independent: PACE removes saturation whatever optimiser is used, and the
