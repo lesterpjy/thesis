@@ -47,10 +47,12 @@ Both shortcuts assume the simulator is cheap to run forward and well behaved to 
 The systems in which timing matters most violate both assumptions, through three properties
 that compound.
 
-The first property is stiffness. A system of differential equations is stiff when its solution
-combines processes on widely separated timescales. In general biochemical networks exhibits stiffness
-because their rate constants span several orders of magnitude: fast reversible binding sits
-alongside slow catalysis and slower degradation~\citep{huangferrell1996mapk}. Stiffness carries
+The first property is stiffness, the feature of chemical-kinetic systems for which the term was
+originally coined~\citep{curtiss1952integration}. A system of differential equations is stiff
+when its solution combines processes on widely separated timescales. Biochemical networks are
+stiff almost by default, because their rate constants span several orders of magnitude, with
+fast reversible binding alongside slow catalysis and slower degradation; in practice most ODE
+models in computational biology are stiff~\citep{stadter2021benchmarking}. Stiffness carries
 a numerical penalty. Explicit solvers must take extremely small steps to stay numerically
 stable even where the trajectory is smooth, so stiff systems are integrated instead with
 implicit solvers that solve a nonlinear system at every step~\citep{hairer1996solving}, at a
@@ -81,10 +83,18 @@ that any such estimator built from $L$ prior samples is capped at $\log(L+1)$ na
 number of samples needed to clear the cap grows exponentially with the information per
 experiment, so on these systems no feasible budget recovers a usable design signal.
 
-No single one of these properties is fatal on its own. Their combination, a broad prior and
-high information per experiment and a stiff simulator, is exactly where the two families of
-methods that dominate modern sequential BED break down, each for a different reason. This thesis
-explains why they break down, and develops a method that does not.
+These three properties are not independent difficulties that one might hope to meet one at a
+time. They are coupled and they co-occur. The same separation of timescales that makes a network
+stiff is what spreads its rate constants over orders of magnitude, which is what makes the prior
+broad; and a broad prior over sharply responsive dynamics is what lets a single experiment carry
+many nats of information. On the small problems that design methods are usually benchmarked on,
+low-dimensional pharmacokinetic compartments, source localisation, and small ODEs, one or more
+of these properties is mild or absent, which is why existing methods do well there. On the
+systems that motivate this work, and on genuinely interesting dynamical systems more generally,
+all three hold at once, and they are not artefacts to be engineered away but the normal
+condition of the problem. This is exactly the regime in which the two families of methods that
+dominate modern sequential BED break down, each for a different reason. This thesis explains why
+they break down, and develops a method that does not.
 
 \section{Two families, two failures}
 \label{sec:intro-obstacle}
