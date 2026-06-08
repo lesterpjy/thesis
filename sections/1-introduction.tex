@@ -164,21 +164,27 @@ reversing the relationship found on the standard benchmarks.
 \section{Contributions}
 \label{sec:intro-contributions}
 
-This thesis introduces \textbf{PACE} (Posterior-Amortized Contrastive Estimation), a
-forward-only sequential design method that escapes contrastive saturation without
-differentiating through the simulator. PACE draws its contrastive samples from an
-amortized neural posterior estimator, trained once by simulation-based
-inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}, and
-corrects them with self-normalized importance weights. It then selects designs by forward
-search rather than by a trained policy or by simulator gradients.
-Figure~\ref{fig:hero} summarises the idea.
+This thesis closes that gap with a method in two separable parts. The first is \textbf{PACE}
+(Posterior-Amortized Contrastive Estimation), an estimator of the per-step information gain. PACE
+keeps the algebra of the sequential adaptive contrastive estimator (sACE), the learned-proposal
+bound stated but never evaluated in the DAD line of work, and supplies its proposal from a
+posterior rather than the prior: a neural posterior estimator trained once, offline, by
+simulation-based inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural},
+whose draws are reweighted toward the running posterior by self-normalized importance weights.
+Drawing the contrastives from the posterior is what removes saturation. The second part is a
+forward-only design optimiser, which chooses each design by scoring candidate designs with PACE
+using forward simulations only, so the design search never differentiates through the simulator.
+The two parts are independent: PACE removes saturation whatever optimiser is used, and the
+forward-only search is what makes the method applicable to the stiff, non-differentiable
+simulators on which gradient-based design fails. Figure~\ref{fig:hero} summarises the idea.
 
-A single mathematical object runs through the whole argument. It is the likelihood ratio
-$r_\ell$ between a contrastive parameter and the data-generating one, whose prior average
-is $e^{-\Lambda}$, where $\Lambda$ is the Gaussian-linearised information gain of the
-experiment. This one quantity drives saturation, governs the failure of the proposed fix,
-becomes the design criterion when that failure is most severe, and predicts when the
-method wins. The four contributions trace it through the method.
+One quantity runs through the whole argument: the likelihood ratio $r_\ell$ between a contrastive
+parameter and the data-generating one. Its average over the prior measures how compatible a typical
+prior draw is with the observed data, and under a Gaussian (Laplace) approximation that average is
+$e^{-\Lambda}$, with $\Lambda$ the linearised information gain of the experiment. This one quantity
+drives saturation, governs the cost that re-emerges after the fix, becomes the design criterion
+when that cost is most severe, and predicts when the method wins; the four contributions trace it
+through the method.
 
 \begin{enumerate}[leftmargin=*,itemsep=0.25em]
   \item \textbf{A diagnosis of contrastive saturation.} We show that the sPCE bound
