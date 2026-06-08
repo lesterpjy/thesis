@@ -34,22 +34,64 @@ parameters after the experiment is run. Running this rule forward produces an ad
 sequence of experiments, each chosen in light of the last, which is exactly the regime
 the timed-input problems above require.
 
-The systems where timing matters most are also the hardest for design algorithms, and this
-difficulty has a specific and recurring shape. They are modelled by stiff ordinary
-differential equations (ODEs), so the numerical solution is sensitive and the solver is
-expensive. Their kinetic parameters are known only to within several orders of magnitude,
-so the prior is broad. And because the dynamics respond strongly to those parameters, a
-single well-placed measurement can rule out most of the prior and so carry many nats of
-information. Each property is individually manageable. Their combination, a broad prior
-and high information per experiment and a stiff simulator, is exactly where the modern
-methods for sequential BED break down. This thesis explains why they break down, and
-develops a method that does not.
 
-\section{The state of the art and where it breaks}
+Applying this framework to real dynamical systems is computationally demanding, for a reason
+that matters throughout the thesis. The expected information gain depends on the marginal
+likelihood of the data, which averages the simulator over the prior and has no closed form,
+so it must be estimated by nested Monte Carlo: an outer average over possible outcomes and an
+inner average that runs the simulator many times to approximate the
+marginal~\citep{ryan2016review,rainforth2018nesting,huan2014simulation}. Scoring one candidate
+design therefore costs many simulator runs, and the methods that make sequential design
+practical reduce this cost in one of two ways: by amortising the computation into a network
+trained once offline, or by optimising designs with gradients taken through the simulator.
+Both shortcuts assume the simulator is cheap to run forward and well behaved to differentiate.
+The systems in which timing matters most violate both assumptions, through three properties
+that compound.
+
+The first property is stiffness. A system of differential equations is stiff when its solution
+combines processes on widely separated timescales, which biochemical networks do as a rule,
+because their rate constants span several orders of magnitude: fast reversible binding sits
+alongside slow catalysis and slower degradation~\citep{huangferrell1996mapk}. Stiffness carries
+a numerical penalty. Explicit solvers must take extremely small steps to stay numerically
+stable even where the trajectory is smooth, so stiff systems are integrated instead with
+implicit solvers that solve a nonlinear system at every step~\citep{hairer1996solving}, at a
+cost well above a single forward evaluation. The penalty is heavier when gradients are needed.
+Differentiating through an implicit solver by the adjoint method~\citep{chen2018neural} adds a
+large compilation overhead, is numerically delicate, and is prone to vanishing or exploding
+gradients on stiff dynamics, difficulties that have driven a dedicated line of work on
+differentiable and reversible stiff
+solvers~\citep{kim2024stiff,pal2023neural,kidger2024efficient,caldana2025neural,linot2025vanishing}.
+For experimental design this penalty is paid twice over: the inner Monte Carlo loop is slow
+because each of its many likelihood evaluations is an implicit solve, and any gradient-based
+design optimisation or policy training is fragile because those gradients pass through the same
+solver.
+
+The second and third properties concern the parameters. Kinetic parameters in biochemical
+models are typically known only to within several orders of magnitude, and many remain only
+weakly constrained even by careful experiments, a pervasive feature of systems-biology models
+often described as parameter sloppiness or practical
+non-identifiability~\citep{gutenkunst2007universally,raue2009identifiability}. The prior is
+therefore broad. At the same time, because stiff dynamics respond sharply to these parameters,
+a single well-timed measurement can rule out most of that broad prior at once, and so carry
+many nats of information. These two properties together are what break the contrastive
+estimators on which modern BED depends. Those estimators approximate the intractable marginal
+by averaging the likelihood over parameter samples drawn from the prior, so when the prior is
+broad and the observation is highly informative, almost every prior sample is incompatible with
+the data and contributes nothing to the average, and the information estimate stalls. We show
+that any such estimator built from $L$ prior samples is capped at $\log(L+1)$ nats, and that the
+number of samples needed to clear the cap grows exponentially with the information per
+experiment, so on these systems no feasible budget recovers a usable design signal.
+
+No single one of these properties is fatal on its own. Their combination, a broad prior and
+high information per experiment and a stiff simulator, is exactly where the two families of
+methods that dominate modern sequential BED break down, each for a different reason. This thesis
+explains why they break down, and develops a method that does not.
+
+\section{Two families, two failures}
 \label{sec:intro-obstacle}
 
-Two families of methods dominate modern sequential BED, and they take opposite stances on
-where to spend computation. \emph{Policy-based} methods, beginning with Deep Adaptive
+The two families take opposite stances on where to spend computation. \emph{Policy-based}
+methods, beginning with Deep Adaptive
 Design (DAD), train a design network offline against a large set of simulated
 trajectories, so that at deployment each next design is produced by a single fast forward
 pass of the network~\citep{foster2021deep,ivanova2021implicit,hedman2025stepdad}.
@@ -61,11 +103,12 @@ on the same enabling tool: simulation-based inference (SBI), which performs Baye
 inference using only samples from the simulator when the likelihood cannot be evaluated in
 closed form~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}.
 
-Policy methods are trained against the sequential prior-contrastive estimation (sPCE)
-bound on the trajectory information~\citep{foster2019variational,foster2020unified,foster2021deep}.
-This bound estimates an intractable marginal likelihood by an average over $L$ parameter
-samples drawn from the prior, and any contrastive lower bound built from $L$ such samples
-cannot exceed $\log(L+1)$ nats~\citep{mcallester2020formal,paninski2005asymptotic}. When a
+For policy methods the prior-average failure described above takes a precise and damaging
+form. They are trained against the sequential prior-contrastive estimation (sPCE) bound on
+the trajectory information~\citep{foster2019variational,foster2020unified,foster2021deep},
+which is the prior-averaged contrastive estimator introduced above applied to the whole
+trajectory and so inherits the same $\log(L+1)$
+ceiling~\citep{mcallester2020formal,paninski2005asymptotic}. When a
 single experiment is more informative than this ceiling, almost every prior sample is
 incompatible with the observed trajectory, the bound sits at its ceiling for every
 candidate design, and, as we show, its gradient vanishes at the same rate. The training
