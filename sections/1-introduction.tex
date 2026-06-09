@@ -183,7 +183,7 @@ samples candidate designs, scores each one with PACE from a single shared partic
 the search by a cross-entropy update, using forward simulations of the model and no gradient through
 it. The two parts are independent: PACE removes saturation for any optimiser, and the forward-only
 search is what lets the method run on the stiff, non-differentiable simulators where gradient-based
-design fails. Figure~\ref{fig:hero} summarises the idea. We make four contributions:
+design fails. Figure~\ref{fig:hero} summarises the idea. The contribution has 4 components:
 
 \begin{enumerate}[leftmargin=*,itemsep=0.25em]
   \item \textbf{A diagnosis of contrastive saturation.} We show that the sPCE bound
