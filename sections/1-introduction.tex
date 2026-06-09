@@ -187,8 +187,10 @@ design fails. Figure~\ref{fig:hero} summarises the idea. We make four contributi
 
 \begin{enumerate}[leftmargin=*,itemsep=0.25em]
   \item \textbf{A diagnosis of contrastive saturation.} We show that the sPCE bound
-  equals $\log(L+1)-\log(1+\sum_\ell r_\ell)$, that its gradient vanishes whenever the
-  bound does, and that the escape budget scales as $e^{\Lambda}$. We give three
+  equals $\log(L+1)-\log(1+\sum_\ell r_\ell)$, where $r_\ell$ is the likelihood ratio of
+  contrastive $\ell$ to the data-generating parameter, that its gradient vanishes whenever
+  the bound does, and that the budget needed to escape the ceiling scales as $e^{\Lambda}$,
+  with $\Lambda$ the Gaussian-linearised information gain of the experiment. We give three
   mechanisms, broad priors, high-dynamic-range dynamics, and non-Gaussian noise, that make
   the failure severe on biochemical systems, and we measure escape thresholds ranging from
   below $10$ to above $10^6$ across a twelve-system suite.
