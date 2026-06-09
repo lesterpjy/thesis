@@ -237,20 +237,19 @@ objective saturates?}
 \section{Thesis outline}
 \label{sec:intro-outline}
 
-Chapter~\ref{sec:related_work} positions PACE against the literature it draws on and
-departs from. It develops the three lines the method touches, simulation-based inference,
-the contrastive-EIG estimators that policy methods train on, and the per-trajectory and
-reinforcement-learning families, in enough detail that the reader meets every object PACE
-uses, including the learned-proposal contrastive bounds, before the method is derived, and
-it states the gap PACE fills. Chapter~\ref{sec:methodology} develops the method in full:
-it sets up sequential BED, derives the trajectory objective that policy methods optimise
-and the contrastive estimators used for evaluation, then presents the saturation diagnosis
-(RQ1), the PACE estimator and its cost transfer (RQ2), the analysis of design selection
-under weight collapse (RQ3), the forward-only optimiser and its gradient variant, and the
-evaluation protocol. Chapter~\ref{sec:results} reports the empirical study on twelve
-systems (RQ4), including the ablation that separates the estimator from the optimiser and
-the diagnostics that justify trusting the method when the effective sample size is small.
-Chapter~\ref{sec:discussion} discusses when PACE should be used, its practical cost, and
-its limitations, and Chapter~\ref{sec:conclusion} answers each research question. Full
-derivations, system specifications, and additional diagnostics are in the appendix; the
-main text is self-contained without it.
+Chapter~\ref{sec:related_work} positions PACE against the literature it draws on and departs from.
+It develops the three lines the method touches, simulation-based inference, the contrastive-EIG
+estimators that policy methods train on, and the per-trajectory and reinforcement-learning
+families, so that every object the method later uses, including the learned-proposal contrastive
+bounds, is introduced before it is needed, and it states the gap PACE fills.
+Chapter~\ref{sec:methodology} develops the method in full. It sets up sequential BED and derives
+the trajectory objective that policy methods optimise together with the contrastive estimators
+used for evaluation, then presents the saturation diagnosis (RQ1), the PACE estimator and its cost
+transfer (RQ2), the validity of design selection under weight collapse (RQ3), the forward-only
+optimiser and its gradient variant, and the evaluation protocol. Chapter~\ref{sec:results} reports
+the empirical study on twelve systems (RQ4), including the ablation that separates the estimator
+from the optimiser and the diagnostics that justify trusting the method when the effective sample
+size is small. Chapter~\ref{sec:discussion} discusses when PACE should be used, its practical cost,
+and its limitations, and Chapter~\ref{sec:conclusion} answers each research question. Full
+derivations, system specifications, and additional diagnostics are in the appendix, and the main
+text is self-contained without it.
