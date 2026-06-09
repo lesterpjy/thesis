@@ -175,19 +175,10 @@ posterior-predictive. The proposal is a neural posterior estimator trained once,
 simulation-based inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}:
 particles are drawn from it and corrected to the true posterior by those weights. Because they
 come from the posterior, these contrastives lie where the data are plausible, so they estimate the
-denominator well and the score tracks the true gain instead of pinning at the $\log(L+1)$ ceiling.
+denominator well and the score tracks the true gain instead of pinning at the $\log(L+1)$ ceiling. Figure~\ref{fig:hero} summarises the idea.
 The difficulty is not removed but moved: as the posterior concentrates, the importance weights lose
-effective sample size, a cost transfer we analyze. Figure~\ref{fig:hero} summarises the idea. The second part is a
-forward-only design optimiser, which chooses each design by scoring candidate designs with PACE
-using forward simulations only, so the design search never differentiates through the simulator.
-
-One quantity runs through the whole argument: the likelihood ratio $r_\ell$ between a contrastive
-parameter and the data-generating one. Its average over the prior measures how compatible a typical
-prior draw is with the observed data, and under a Gaussian (Laplace) approximation that average is
-$e^{-\Lambda}$, with $\Lambda$ the linearised information gain of the experiment. This one quantity
-drives saturation, governs the cost that re-emerges after the fix, becomes the design criterion
-when that cost is most severe, and predicts when the method wins; the four contributions trace it
-through the method.
+effective sample size, a cost transfer we analyze. The second part is a forward-only design optimiser, which chooses each design by scoring candidate designs with PACE
+using forward simulations only, so the design search never differentiates through the simulator. The contribution has 4 components:
 
 \begin{enumerate}[leftmargin=*,itemsep=0.25em]
   \item \textbf{A diagnosis of contrastive saturation.} We show that the sPCE bound
