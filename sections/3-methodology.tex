@@ -12,9 +12,8 @@ Section~\ref{sec:m-forward} gives the forward-only optimiser and its gradient
 variant, Section~\ref{sec:m-eval} the evaluation protocol, and
 Section~\ref{sec:m-synthesis} draws the four results together.
 
-The derivations are given in full. A few proofs are standard and are stated in the
-text with the full version in Appendix~\ref{app:background}; everything specific to
-PACE is derived here.
+Everything specific to PACE is derived in this chapter. A few standard results are
+stated in the text with full proofs deferred to Appendix~\ref{app:background}.
 
 \section{Background and problem setting}
 \label{sec:m-prelim}
@@ -142,8 +141,8 @@ $\mathrm{sPCE}_L\le\log(L+1)$. Equivalently, sPCE is a classification bound, sin
 identifying which of the $L{+}1$ exchangeable draws generated $y_t$ has success
 probability at most one (Appendix~\ref{app:background}). The sNMC excludes $\theta_0$,
 so its denominator is an unbiased estimate of the marginal; by Jensen's inequality
-the expected log of an unbiased estimate underestimates the log of the mean, the
-marginal is underestimated, the ratio overestimated, and
+the expected log of an unbiased estimate underestimates the log of the mean, so the
+log-marginal is underestimated, the log-ratio overestimated, and
 $\mathbb{E}[\mathrm{sNMC}_L]\ge I_{h_{t-1}}(\xi_t)$. Both biases are $O(1/L)$, so
 $[\mathrm{sPCE}_L,\mathrm{sNMC}_L]$ brackets the true EIG and tightens as $L\to\infty$.
 When one method's sPCE exceeds another's sNMC, the ordering is exact regardless of
@@ -395,6 +394,17 @@ SEIR, show the largest gap between $e^{\Lambda}$ and $L_{\mathrm{escape},50}$
 prediction; and systems with tight priors (PK 8-comp) have $L_{\mathrm{escape},50}\le10$
 regardless of the forward map.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig_a1_heatmap.pdf}
+  \caption[Escape threshold heatmap]{Contrastive saturation across the benchmark
+  suite. Each cell shows $L_{\mathrm{escape},50}$ as a function of the contrastive
+  budget $L$. Systems in which the three mechanisms compound (broad priors,
+  high-dynamic-range map, non-Gaussian noise) require budgets several orders of
+  magnitude above the Laplace prediction $e^{\Lambda}$.}
+  \label{fig:heatmap}
+\end{figure}
+
 \section{The PACE estimator and the cost transfer}
 \label{sec:m-pace}
 
@@ -558,6 +568,16 @@ $e^{D_{\mathrm{KL}}(p\,\|\,q_\phi)}$~\citep{chatterjee2018sample}, which is infe
 for our systems. Design selection, however, needs reliable \emph{rankings}, not
 values, and the next section shows the rankings survive.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figures/fig_a1_contraction.pdf}
+  \caption[Posterior contraction and ESS collapse]{Posterior contraction and
+  effective sample size across BED steps. As the posterior concentrates, the
+  proposal mismatch grows and the ESS collapses, yet the per-step information
+  $\Delta S_t$ remains positive and the design ranking is preserved.}
+  \label{fig:contraction}
+\end{figure}
+
 \section{Design selection under weight collapse}
 \label{sec:m-lowess}
 
@@ -654,7 +674,9 @@ Eq.~\eqref{eq:kl} reduces to the quadratic form
 $\tfrac12(\theta_{\mathrm{dom}}-\theta_{k^\ast})^\top F(\xi_t)(\theta_{\mathrm{dom}}-\theta_{k^\ast})$,
 where $F(\xi_t)$ is the Fisher information of the design. Treating $\theta_{k^\ast}$ as a
 posterior draw with covariance $\Sigma_{\mathrm{post}}$ and taking the expectation over it
-gives, through $\mathbb{E}[(\theta_{\mathrm{dom}}-\theta_{k^\ast})(\theta_{\mathrm{dom}}-\theta_{k^\ast})^\top]=\Sigma_{\mathrm{post}}$,
+gives, through $\mathbb{E}[(\theta_{\mathrm{dom}}-\theta_{k^\ast})(\theta_{\mathrm{dom}}-\theta_{k^\ast})^\top]=\Sigma_{\mathrm{post}}$
+(which holds exactly when $\theta_{\mathrm{dom}}$ equals the posterior mean; in practice
+the dominant particle approximates the mode, so this step is a Laplace-level approximation),
 the expected criterion
 $\tfrac12\,\mathrm{tr}\!\big(F(\xi_t)\Sigma_{\mathrm{post}}\big)$: Fisher information weighted
 by residual posterior uncertainty, which is the D-optimal and classical Fisher design

@@ -10,7 +10,7 @@ contributed despite that collapse. We report per-step increments
 $\Delta S_t = S_t - S_{t-1}$, where $S_t$ is the sPCE bound
 [Eq.~\eqref{eq:spce}] evaluated on the length-$t$ prefix $\hist_t$ (with $S_0=0$
 and $S_T=\mathrm{sPCE}_T$). By the chain rule of mutual information these
-telescope, $\sum_{t=1}^{T}\Delta S_t = S_T$, recovering the trajectory bound
+telescope, $\sum_{t=1}^{T}\Delta S_t = S_T$, approximately recovering the trajectory bound
 (last column of Table~\ref{tab:perstep-dS}); each $\Delta S_t$ estimates the
 conditional EIG $I(\theta;y_t\mid\hist_{t-1})$ [Eq.~\eqref{eq:step-eig}] at the
 realized $y_t$. Crucially, $S_t$ weights the contrastive denominator by the
@@ -30,7 +30,7 @@ matching evaluation protocol.}
 $\Delta S_t$ decays across steps for every method, but this reflects the
 information remaining in a contracting posterior, \emph{not} the IS-weight ESS
 collapse of Table~\ref{tab:ess-full}, from which it is empirically decoupled.
-On CES the ESS pins at ${\approx}2$ from step~2 onward, yet $48\%$ of PACE's total
+On CES the ESS pins at ${\approx}2$ from step~2 onward, yet $70\%$ of PACE's total
 information is still acquired at $\mathrm{ESS}\leq 5$ (steps~3--5 alone, at
 $\mathrm{ESS}\leq 3$, contribute $34\%$); on source-location $p{=}2$ the
 PACE$-$random per-step gap holds at $\approx{+}0.3$ nat through the late steps
@@ -45,8 +45,8 @@ $\Delta S_t$ decays just as steeply. Per-step design quality follows the informa
 ESS: the per-step, mechanistic counterpart of the aggregate result that ESS
 does not predict performance (\S\ref{sec:r-perstep}).
 \emph{(ii) The cumulative advantage holds throughout.} PACE's
-$\Sigma_t\Delta S_t$ exceeds random on \emph{every} system, by $+0.5$ to $+5.6$
-nat, and exceeds DAD on CES, SEIR~R=3, source-location $p{=}2$ and $p{=}5$,
+$\Sigma_t\Delta S_t$ exceeds random by $+0.5$ to $+5.6$
+nat on each system in this table, and exceeds DAD on CES, SEIR~R=3, source-location $p{=}2$ and $p{=}5$,
 PK~8-comp, and PK~1-comp $T{=}5$; it ties PK~1-comp $T{=}3$ and trails DAD on
 Monod, PI3K, and source-location $p{=}8$ (consistent with
 Table~\ref{tab:results}). The few late steps
@@ -72,7 +72,7 @@ little late-step resolution regardless.)
 \begin{table}[h]
 \centering\scriptsize
 \setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{0.92}
-\caption{Per-step chain-rule EIG contribution $\Delta S_t = S_t - S_{t-1}$ (mean over $n$ rollouts; $S_t$ = sPCE on the length-$t$ prefix). All PACE rows use the deployed PACE-ftk (CEM) configuration of Table~\ref{tab:results} (the same per-rollout runs; PACE-grad is the ablation in Table~\ref{tab:ablation}, not shown here). Read alongside Table~\ref{tab:ess-full} (ESS per step). Last column $\Sigma_t \Delta S_t$ = trajectory sPCE, recovering Table~\ref{tab:results}. $\Delta S_t$ decays for all methods (posterior concentration, decoupled from the ESS of Table~\ref{tab:ess-full}); cumulative $\Sigma_t\Delta S_t$ for PACE exceeds random on every system. }
+\caption{Per-step chain-rule EIG contribution $\Delta S_t = S_t - S_{t-1}$ (mean over $n$ rollouts; $S_t$ = sPCE on the length-$t$ prefix). All PACE rows use the deployed PACE-ftk (CEM) configuration of Table~\ref{tab:results} (the same per-rollout runs; PACE-grad is the ablation in Table~\ref{tab:ablation}, not shown here). Read alongside Table~\ref{tab:ess-full} (ESS per step). Last column $\Sigma_t \Delta S_t$ = trajectory sPCE, approximately recovering Table~\ref{tab:results} to within MC error. $\Delta S_t$ decays for all methods (posterior concentration, decoupled from the ESS of Table~\ref{tab:ess-full}). PK 1-comp random uses $n{=}45$ rollouts and is noisier per step. }
 \label{tab:perstep-dS}
 \begin{tabular}{ll>{\raggedright\tiny\arraybackslash}p{8.4cm}r}
 \toprule
