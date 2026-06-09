@@ -181,7 +181,7 @@ samples candidate designs, scores each one with PACE from a single shared partic
 the search by a cross-entropy update, using forward simulations of the model and no gradient through
 it. The two parts are independent: PACE removes saturation for any optimiser, and the forward-only
 search is what lets the method run on the stiff, non-differentiable simulators where gradient-based
-design fails. Figure~\ref{fig:hero} summarises the idea. We make four contributions:
+design fails. Figure~\ref{fig:hero} summarises the idea. The contribution has four components:
 
 \begin{enumerate}[leftmargin=*,itemsep=0.25em]
   \item \textbf{A diagnosis of contrastive saturation.} We show that the sPCE bound
@@ -219,14 +219,7 @@ design fails. Figure~\ref{fig:hero} summarises the idea. We make four contributi
 \section{Research questions}
 \label{sec:intro-rqs}
 
-The thesis is organised around one main question. It asks whether the obstacle above can be
-removed, and at what cost; the four sub-questions follow the single quantity of the previous
-section from the diagnosis of the failure, through the fix and the cost it transfers, to the
-regime where the method is needed.
-
-\medskip
-\noindent\textit{Main question: Can sequential Bayesian experimental design be made feasible and
-effective on the stiff, broad-prior, high-information dynamical systems where the amortized policy
+The thesis is organised around one main question: \textit{Can sequential Bayesian experimental design be made feasible and effective on the stiff, broad-prior, high-information dynamical systems where the amortized policy
 objective saturates?}
 
 \begin{itemize}[leftmargin=*,itemsep=0.2em]
@@ -235,7 +228,7 @@ objective saturates?}
   policy is trained?
   \item \textbf{RQ2.} Can contrastives drawn from a one-time, simulation-based posterior estimator
   remove that saturation, and what new cost does the replacement introduce?
-  \item \textbf{RQ3.} When the importance weights collapse onto a single particle, do the resulting
+  \item \textbf{RQ3.} When the importance weights collapse onto few particles, do the resulting
   design rankings remain valid?
   \item \textbf{RQ4.} Across a broad suite of systems, when does the forward-only
   posterior-contrastive method match or exceed amortized policies, and what predicts the crossover?
