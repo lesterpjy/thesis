@@ -175,10 +175,15 @@ posterior-predictive. The proposal is a neural posterior estimator trained once,
 simulation-based inference~\citep{cranmer2020frontier,greenberg2019automatic,durkan2019neural}:
 particles are drawn from it and corrected to the true posterior by those weights. Because they
 come from the posterior, these contrastives lie where the data are plausible, so they estimate the
-denominator well and the score tracks the true gain instead of pinning at the $\log(L+1)$ ceiling. Figure~\ref{fig:hero} summarises the idea.
-The difficulty is not removed but moved: as the posterior concentrates, the importance weights lose
-effective sample size, a cost transfer we analyze. The second part is a forward-only design optimiser, which chooses each design by scoring candidate designs with PACE
-using forward simulations only, so the design search never differentiates through the simulator. The contribution has 4 components:
+denominator well and the score tracks the true gain instead of pinning at the $\log(L+1)$ ceiling.
+The same posterior concentration that caused saturation does not go away, however; it now appears
+in the importance weights, whose effective sample size falls as the posterior tightens, a cost
+transfer we analyse below. The second part is a forward-only design optimiser: at each step it
+samples candidate designs, scores each one with PACE from a single shared particle set, and refines
+the search by a cross-entropy update, using forward simulations of the model and no gradient through
+it. The two parts are independent: PACE removes saturation for any optimiser, and the forward-only
+search is what lets the method run on the stiff, non-differentiable simulators where gradient-based
+design fails. Figure~\ref{fig:hero} summarises the idea. We make four contributions:
 
 \begin{enumerate}[leftmargin=*,itemsep=0.25em]
   \item \textbf{A diagnosis of contrastive saturation.} We show that the sPCE bound
