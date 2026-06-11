@@ -250,7 +250,9 @@ solution at the cost of storing the forward pass.
 Stiffness makes both routes fragile. The adjoint system of a stiff forward problem is itself
 stiff, so it must again be solved implicitly and is numerically delicate, and the sensitivities to
 fast-decaying modes shrink towards zero, a vanishing-gradient pathology that
-\citet{fronk2025vanishing} show is intrinsic to stiff neural differential equations and affects every A-stable scheme. These difficulties have driven a dedicated line of work on differentiable
+\citet{fronk2025vanishing} show is intrinsic to stiff neural differential equations and affects
+every solver damped enough to handle stiff dynamics in the first place. These difficulties
+have driven a dedicated line of work on differentiable
 stiff solvers: implicit single-step methods for training stiff neural ODEs~\citep{fronk2024stiff},
 semi-implicit schemes~\citep{aaai2025semiimplicit}, algebraically reversible solvers that recover
 the backward pass without storing the forward trajectory~\citep{mccallum2024efficient}, learned
@@ -268,20 +270,21 @@ broad priors used here. For the \emph{inference} problem the cost of stiff solve
 head-on: large biochemical models are routinely fitted by adjoint sensitivity analysis, which
 makes the gradient cost effectively independent of the number of parameters and scales estimation
 to models with hundreds of states and parameters~\citep{froehlich2017scalable}. That work,
-however, estimates parameters from data already collected, not the experiments that produce the
-data. Carrying the same adjoint machinery into sequential design meets the saturation obstacle of Section~\ref{sec:rw-policy}, which no advance in solver technology removes, because it is a property of the prior-contrastive objective and not of the solver.
+however, estimates parameters from data already collected, not the experiments that produce the data.
+
 
 \section{Summary and the gap}
 \label{sec:rw-gap}
 
-The amortized policy family casts sequential design as a single trajectory objective and
-trains a network to optimise it, but that objective is a prior-contrastive bound with a
-$\log(L+1)$ ceiling, so its training signal vanishes on high-information systems, and the
-reinforcement-learning variants that train on the same bound inherit its saturation. The
-per-trajectory family avoids the ceiling by using the current posterior, but it
-pays for simulator gradients that stiff systems do not provide reliably, or it retrains a
-proposal at every step. Simulation-based inference supplies the posterior estimator that
-PACE reuses, but its own theory says the importance weights must degrade as the posterior
-concentrates. The gap, then, is a sequential design method that takes the current posterior
-from a one-time SBI estimator, scores designs with forward simulations only, and stays valid
-when the importance weights collapse. PACE is that method, and the next chapter derives it.
+The chapter has traced two families that dominate sequential design, and on the systems
+studied here each fails for a different reason. The amortized policy family trains a network
+on a single trajectory objective, but that objective is a prior-contrastive bound capped at
+$\log(L+1)$, so its signal saturates on high-information experiments, and the
+reinforcement-learning variants trained on the same bound saturate with it. The per-trajectory
+family escapes the ceiling by scoring designs against the current posterior, but only by
+differentiating through the simulator, which stiff solvers cannot do reliably, or by re-fitting
+the posterior at every step. On stiff, high-information systems both obstacles are present at
+once, and neither family is usable. The gap is a per-trajectory method that keeps the current
+posterior but pays neither cost: it reuses a posterior trained once by simulation-based
+inference and scores designs with forward simulations only. Closing this gap is the goal of
+this thesis. In the next chapter, we derive PACE in detail.
