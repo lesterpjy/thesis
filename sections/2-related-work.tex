@@ -83,30 +83,21 @@ Any contrastive lower bound on mutual information computed from $L{+}1$ samples 
 \subsection{Sequential amortization: DAD, iDAD, and the learned-proposal bounds}
 \label{sec:rw-dad}
 
-In the sequential setting, an experiment consists of $T$ steps. At step $t$ a design $\xi_t$ is chosen based on all previous design--outcome pairs, the history $h_{t-1} = {(\xi_i, y_i)}_{i<t}$, and an observation $y_t \sim p(y_t \mid \theta, \xi_t)$ is collected. A design policy $\pi$ maps each history to the next design, $\xi_t = \pi(h_{t-1})$, so the full trajectory $h_T = {(\xi_t, y_t)}_{t=1}^T$ is determined jointly by $\theta$ and $\pi$. The objective is the total expected information gain $\mathcal{I}_T(\pi)$, the mutual information between $\theta$ and $h_T$ under the policy.
+In the sequential setting, an experiment consists of $T$ steps. At step $t$ a design $\xi_t$ is chosen based on all previous design--outcome pairs, the history $h_{t-1} = \{(\xi_i,y_i)\}_{i<t}$, and an observation $y_t \sim p(y_t \mid \theta, \xi_t)$ is collected. A design policy $\pi$ maps each history to the next design, $\xi_t = \pi(h_{t-1})$, so the full trajectory $h_T = {(\xi_t, y_t)}_{t=1}^T$ is determined jointly by $\theta$ and $\pi$. The objective is the total expected information gain $\mathcal{I}_T(\pi)$, the mutual information between $\theta$ and $h_T$ under the policy.
 
-Deep Adaptive Design (DAD)~\citep{foster2021deep} lifted contrastive estimation to the
-sequential, amortized setting. It trains a policy network $\pi_\phi$ that maps a history
-$h_{t-1}=\{(\xi_i,y_i)\}_{i<t}$ to the next design, maximising the mutual information
-between $\theta$ and the full trajectory $h_T$ generated under the policy, estimated by the
-\emph{sequential} prior-contrastive bound (sPCE), which is the trajectory analogue of
-Eq.~\eqref{eq:rw-pce} with the per-experiment likelihood replaced by the trajectory
-likelihood $p(h_T\mid\theta,\pi)$. Chapter~\ref{sec:methodology} derives this trajectory
-objective and its bound in full. Implicit DAD (iDAD)~\citep{ivanova2021implicit} extends
-DAD to likelihood-free simulators by replacing the likelihood with a learned critic, and
-Step-DAD~\citep{hedman2025stepdad} refines a pretrained DAD policy with gradient steps at selected points during deployment, trading deployment compute for better designs.
+Deep Adaptive Design (DAD)~\citep{foster2021deep} amortizes this objective by training a policy network $\pi_\phi$ offline on simulated trajectories; at deployment the network returns a design in a single forward pass. The training signal is the sequential prior-contrastive bound (sPCE), the trajectory analogue of Eq.~\eqref{eq:rw-pce} with the per-experiment likelihood replaced by the trajectory likelihood $p(h_T\mid\theta,\pi)$. Implicit DAD (iDAD)~\citep{ivanova2021implicit} extends DAD to likelihood-free simulators by replacing the likelihood with a learned critic, and Step-DAD~\citep{hedman2025stepdad} refines a pretrained DAD policy with gradient steps at selected points during deployment, trading deployment compute for better designs.
 
-The learned-proposal versions of the sequential bound were written down in this lineage but
-never run. \citet{foster2021deep} state and prove the sequential ACE bound in their
-appendix (Theorem~5) but train DAD on prior-contrastive sPCE, explicitly deferring the
-learned proposal ``in the interest of simplicity''. Written out, the sequential ACE bound
+
+The learned-proposal versions of the sequential bound were derived in this line of work but
+never evaluated. \citet{foster2021deep} state and prove the sequential ACE bound in their
+appendix but only train DAD on prior-contrastive sPCE. Written out, the sequential ACE bound
 \citep[Theorem~5, Eq.~91]{foster2021deep} is
 \begin{equation}
 \label{eq:sace}
 I_T(\pi) \ge \mathbb{E}_{p(\theta_0,h_T\mid\pi)\,q(\theta_{1:L};h_T)}
 \!\left[\log\frac{p(h_T\mid\theta_0,\pi)}{\frac{1}{L+1}\sum_{\ell=0}^{L} p(h_T\mid\theta_\ell,\pi)\,\dfrac{p(\theta_\ell)}{q(\theta_\ell;h_T)}}\right],
 \end{equation}
-the trajectory analogue of Eq.~\eqref{eq:rw-ace}, with the proposal conditioning on the
+which is the trajectory analogue of Eq.~\eqref{eq:rw-ace}, with the proposal conditioning on the
 full trajectory $h_T$. 
 \citet{ivanova2021implicit} give the likelihood-free analogue, sLACE (their Appendix~B, Proposition~4), which replaces the trajectory likelihood $p(h_T\mid\theta_\ell,\pi)$ with a learned critic $U(h_T,\theta_\ell)$,
 \begin{equation}
@@ -123,7 +114,7 @@ ceiling. The sequential learned-proposal estimator was therefore foreseen in thi
 but left as a proven, unevaluated appendix result. PACE keeps the algebra of
 Eq.~\eqref{eq:sace} but conditions the proposal on the history prefix and reweights toward
 the running posterior rather than the prior, a change Chapter~\ref{sec:methodology} makes
-precise and from which the saturation diagnosis and the cost transfer follow.
+precise and derive further.
 
 \section{Reinforcement-learning approaches}
 \label{sec:rw-rl}

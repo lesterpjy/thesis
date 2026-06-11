@@ -416,49 +416,84 @@ importance weights.
 \subsection{Definition}
 \label{sec:m-pacedef}
 
-PACE is built from self-normalized importance sampling, so we recall the construction before
-applying it. To estimate an expectation $\mathbb{E}_{p}[f(\theta)]$ under a target $p$ from
-which we cannot sample directly, importance sampling draws $\theta_j\sim q$ from a tractable
-proposal and reweights each draw by the ratio $w_j=p(\theta_j)/q(\theta_j)$, since
-$\mathbb{E}_{q}[w\,f]=\mathbb{E}_{p}[f]$. When the target is known only up to a normalising
-constant, as the posterior $p(\theta\mid h)\propto p(\theta)\,p(h\mid\theta)$ is, that
-constant is unknown, but it cancels if the weights are normalised to sum to one: the
-self-normalized estimate $\sum_j\tilde w_j f(\theta_j)$ with $\tilde w_j=w_j/\sum_k w_k$ is
-consistent whenever the proposal covers the target, at the price of an $O(1/J)$ bias. PACE
-applies this idea twice from a single particle set: once to retarget the NPE proposal to the
-current posterior, and once to build the posterior-predictive denominator of the per-step
-EIG from the same particles.
 
-Draw particles $\theta_{1:J}\sim q_\phi(\theta\mid h_{t-1})$ from the NPE and form
-self-normalized importance weights that retarget the proposal to the posterior,
+The per-step EIG (Eq.~\eqref{eq:step-eig}) is an expectation under the current posterior of a log-ratio:
+\begin{equation}
+\label{eq:eig-recall}
+I_{h_{t-1}}(\xi_t) = \mathbb{E}_{p(\theta\mid h_{t-1})p(y_t\mid\theta,\xi_t,h_{t-1})}
+\left[\log\frac{p(y_t\mid\theta,\xi_t,h_{t-1})}{p(y_t\mid\xi_t,h_{t-1})}\right]
+\end{equation}
+Estimating this requires two things we do not have in closed form: samples from the current posterior $p(\theta\mid h_{t-1})$ for the outer expectation, and the posterior-predictive marginal $p(y_t\mid\xi_t,h_{t-1})=\int p(y_t\mid\theta,\xi_t,h_{t-1})p(\theta\mid h_{t-1}) d\theta$ in the denominator. The NPE gives an approximation $q_\phi(\theta\mid h_{t-1})\approx p(\theta\mid h_{t-1})$ from which we can sample and whose density we can evaluate. PACE uses importance weighting to bridge the gap. Draw $J$ particles from the NPE, $\theta_{1:J}\sim q_\phi(\theta\mid h_{t-1})$, and assign each an unnormalized importance weight
 \begin{equation}
 \label{eq:weights}
-w_j = \frac{p(\theta_j)\,p(h_{t-1}\mid\theta_j)}{q_\phi(\theta_j\mid h_{t-1})},
-\qquad
-\tilde w_j = \frac{w_j}{\sum_{k=1}^{J}w_k}.
+w_j = \frac{p(\theta_j)p(h_{t-1}\mid\theta_j)}{q_\phi(\theta_j\mid h_{t-1})}
 \end{equation}
-The unnormalized weight is $w_j\propto p(\theta_j\mid h_{t-1})/q_\phi(\theta_j\mid h_{t-1})$,
-the posterior-to-proposal ratio, and the marginal $p(h_{t-1})$ cancels in the
-normalisation, so the weights need only the prior, the trajectory likelihood, and the
-NPE density. For each particle and a candidate design $\xi_t$, draw
-$y_{t,j}\sim p(y_t\mid\theta_j,\xi_t,h_{t-1})$. The PACE estimator is
+By Bayes' rule the posterior is $p(\theta_j\mid h_{t-1})=p(\theta_j)p(h_{t-1}\mid\theta_j)/p(h_{t-1})$, so $w_j$ is proportional to the posterior-to-proposal ratio $p(\theta_j\mid h_{t-1})/q_\phi(\theta_j\mid h_{t-1})$, with the unknown evidence $p(h_{t-1})$ as a constant factor across particles. This constant cancels when the weights are normalised,
+\begin{equation}
+\label{eq:wnorm}
+\tilde w_j = \frac{w_j}{\sum_{k=1}^{J}w_k},
+\end{equation}
+so the normalised weights need only quantities we can compute: the prior $p(\theta_j)$, the trajectory likelihood $p(h_{t-1}\mid\theta_j)$, and the NPE density $q_\phi(\theta_j\mid h_{t-1})$. These weights turn the NPE sample into a weighted approximation of the posterior: for any function $f$, the estimate $$\sum_j\tilde w_jf(\theta_j)\to\mathbb{E}_{p(\theta\mid h_{t-1})}[f(\theta)]$$ as $J\to\infty$. This gives us both missing ingredients. For the outer expectation, the posterior average over $\theta$ is replaced by the weighted sum over particles. For the denominator, the posterior-predictive marginal is the posterior expectation of the likelihood,
+\begin{equation}
+\label{eq:postpred}
+p(y_t\mid\xi_t,h_{t-1})=\mathbb{E}_{p(\theta\mid h_{t-1})}\big[p(y_t\mid\theta,\xi_t,h_{t-1})\big],
+\end{equation}
+which the weighted particles estimate as $\sum_k\tilde w_k\,p(y_t\mid\theta_k,\xi_t,h_{t-1})$. Substituting both into Eq.~\eqref{eq:eig-recall}: for each particle $\theta_j$, draw an observation $y_{t,j}\sim p(y_t\mid\theta_j,\xi_t,h_{t-1})$. The weighted average over particles approximates the outer expectation, and the weighted likelihood sum approximates the marginal denominator, giving the PACE estimator,
 \begin{equation}
 \label{eq:pace}
 \hat I^{\mathrm{PACE}}(\xi_t;h_{t-1})
 = \sum_{j=1}^{J}\tilde w_j
-\!\left[\log p(y_{t,j}\mid\theta_j,\xi_t,h_{t-1})
+\left[\log p(y_{t,j}\mid\theta_j,\xi_t,h_{t-1})
 - \log\sum_{k=1}^{J}\tilde w_k\,p(y_{t,j}\mid\theta_k,\xi_t,h_{t-1})\right].
 \end{equation}
-Each particle plays two roles: it generates an observation through $y_{t,j}$, and it
-acts as a weighted contrastive in the denominator for every other particle. The
-denominator is a self-normalized estimate of the posterior-predictive marginal
-$p(y_t\mid\xi_t,h_{t-1})$, which is the correct denominator for the per-step EIG in
-Eq.~\eqref{eq:step-eig}, in contrast to the prior-predictive marginal that the
-saturated sPCE denominator estimates. In implementation we average the bracket over
-$M$ observation draws per particle. Algebraically Eq.~\eqref{eq:pace} is the per-step
-instance of the importance-weighted contrastive bound whose trajectory form appears
-in the appendices of \citet{foster2021deep} and \citet{ivanova2021implicit}; the
-difference is that $q_\phi$ is trained once by SBI rather than jointly with a policy.
+
+
+Each particle plays two roles: it generates an observation through $y_{t,j}$, and it acts as a weighted contrastive in the denominator for every other particle. The denominator estimates the \emph{posterior}-predictive marginal, which is the correct denominator for the per-step EIG, in contrast to the \emph{prior}-predictive marginal that the saturated sPCE denominator estimates. In implementation we average the bracket over $M$ observation draws per particle.
+
+
+% PACE is built from self-normalized importance sampling, so we recall the construction before
+% applying it. To estimate an expectation $\mathbb{E}_{p}[f(\theta)]$ under a target $p$ from
+% which we cannot sample directly, importance sampling draws $\theta_j\sim q$ from a tractable
+% proposal and reweights each draw by the ratio $w_j=p(\theta_j)/q(\theta_j)$, since
+% $\mathbb{E}_{q}[w\,f]=\mathbb{E}_{p}[f]$. When the target is known only up to a normalising
+% constant, as the posterior $p(\theta\mid h)\propto p(\theta)\,p(h\mid\theta)$ is, that
+% constant is unknown, but it cancels if the weights are normalised to sum to one: the
+% self-normalized estimate $\sum_j\tilde w_j f(\theta_j)$ with $\tilde w_j=w_j/\sum_k w_k$ is
+% consistent whenever the proposal covers the target, at the price of an $O(1/J)$ bias. PACE
+% applies this idea twice from a single particle set: once to retarget the NPE proposal to the
+% current posterior, and once to build the posterior-predictive denominator of the per-step
+% EIG from the same particles.
+
+% Draw particles $\theta_{1:J}\sim q_\phi(\theta\mid h_{t-1})$ from the NPE and form
+% self-normalized importance weights that retarget the proposal to the posterior,
+% \begin{equation}
+% \label{eq:weights}
+% w_j = \frac{p(\theta_j)\,p(h_{t-1}\mid\theta_j)}{q_\phi(\theta_j\mid h_{t-1})},
+% \qquad
+% \tilde w_j = \frac{w_j}{\sum_{k=1}^{J}w_k}.
+% \end{equation}
+% The unnormalized weight is $w_j\propto p(\theta_j\mid h_{t-1})/q_\phi(\theta_j\mid h_{t-1})$,
+% the posterior-to-proposal ratio, and the marginal $p(h_{t-1})$ cancels in the
+% normalisation, so the weights need only the prior, the trajectory likelihood, and the
+% NPE density. For each particle and a candidate design $\xi_t$, draw
+% $y_{t,j}\sim p(y_t\mid\theta_j,\xi_t,h_{t-1})$. The PACE estimator is
+% \begin{equation}
+% \label{eq:pace}
+% \hat I^{\mathrm{PACE}}(\xi_t;h_{t-1})
+% = \sum_{j=1}^{J}\tilde w_j
+% \!\left[\log p(y_{t,j}\mid\theta_j,\xi_t,h_{t-1})
+% - \log\sum_{k=1}^{J}\tilde w_k\,p(y_{t,j}\mid\theta_k,\xi_t,h_{t-1})\right].
+% \end{equation}
+% Each particle plays two roles: it generates an observation through $y_{t,j}$, and it
+% acts as a weighted contrastive in the denominator for every other particle. The
+% denominator is a self-normalized estimate of the posterior-predictive marginal
+% $p(y_t\mid\xi_t,h_{t-1})$, which is the correct denominator for the per-step EIG in
+% Eq.~\eqref{eq:step-eig}, in contrast to the prior-predictive marginal that the
+% saturated sPCE denominator estimates. In implementation we average the bracket over
+% $M$ observation draws per particle. Algebraically Eq.~\eqref{eq:pace} is the per-step
+% instance of the importance-weighted contrastive bound whose trajectory form appears
+% in the appendices of \citet{foster2021deep} and \citet{ivanova2021implicit}; the
+% difference is that $q_\phi$ is trained once by SBI rather than jointly with a policy.
 
 \begin{theorem}[Consistency]
 \label{thm:consistency}
