@@ -119,23 +119,30 @@ precise and derive further.
 \section{Reinforcement-learning approaches}
 \label{sec:rw-rl}
 
-A distinct thread trains the design policy by reinforcement learning, casting sequential
-design as a Markov decision process in which the state is the history, the action is the
-next design, and the reward is an information measure. \citet{blau2022optimizing} optimise
-the policy with deep RL against an sPCE-style information reward, \citet{huan2016sequential}
-use approximate dynamic programming for the same objective, \citet{shen2025vsoed} give a
-variational sequential optimal-design method trained by RL, and
-\citet{belliardo2024modelaware} apply model-aware RL to design in quantum metrology. These
-methods are relevant to this thesis for a specific reason. Because they treat the simulator
-as a black-box environment and learn from rewards rather than from pathwise gradients, they
-\emph{avoid differentiating through the simulator}, which is one of the two obstacles this
-thesis confronts. They do not, however, avoid the other: when the reward is the
-prior-contrastive sPCE bound, it saturates at $\log(L+1)$ on high-information experiments,
-so the reward signal carries the same vanishing information about which design is better. A
-reinforcement-learning method with a reward that is not a prior-contrastive bound could in
-principle avoid both obstacles at once, which makes pure-RL design a plausible alternative
-to PACE on stiff systems. We do not implement or compare against such a method, and we mark
-this as an open point rather than a settled comparison.
+A distinct line of research trains the design policy by reinforcement learning, casting
+sequential design as a Markov decision process in which the state is the history, the action
+is the next design, and the reward is an information measure. \citet{blau2022optimizing}
+optimise the policy with deep RL against an sPCE-style information reward,
+\citet{huan2016sequential} use approximate dynamic programming for the same objective, and
+\citet{shen2025vsoed} introduce variational sequential optimal experimental design (vsOED),
+training the policy by actor-critic RL with a reward built from a variational posterior
+rather than a prior-contrastive bound. Because these methods learn the policy from sampled
+rewards rather than from pathwise gradients, they \emph{avoid differentiating through the
+simulator}, which is one of the two obstacles this thesis confronts. The property is not
+shared by every reinforcement-learning design method: the model-aware approach of
+\citet{belliardo2024modelaware} in quantum metrology backpropagates through the simulator by
+automatic differentiation, and so it carries the differentiable-simulator cost that the
+others avoid.
+
+Whether the second obstacle is also avoided depends on the reward. A policy trained on the
+prior-contrastive sPCE bound inherits its $\log(L+1)$ ceiling, so its signal saturates on
+high-information experiments. The variational reward of vsOED is not contrastive and has no
+such ceiling, so vsOED in principle avoids both obstacles at once, addressing the same two
+difficulties as PACE but by training an amortized policy rather than reusing a fixed
+posterior. The qualification is that its reward is tight only when the learned posterior is
+accurate, which is itself hard on stiff, high-dimensional systems, and vsOED has been shown
+on non-stiff benchmarks such as source location rather than the stiff ODEs studied here. We
+do not compare against it, which is a limitation of our evaluation.
 
 \section{Per-trajectory and posterior-guided design}
 \label{sec:rw-pertraj}
@@ -148,16 +155,16 @@ policies on the hardest systems.
 
 \citet{kleinegesse2020bayesian} estimate the EIG for implicit models with
 mutual-information neural estimation and optimise the design directly.
-\citet{klein2026supercharging} show that several EIG estimators can be built on modern SBI
-density estimators and optimised by multiple-restart gradient ascent through the simulator,
-unifying inference and design; this is the closest per-trajectory method to PACE.
-\citet{iollo2025posterior} and \citet{iollo2025contrastive} develop posterior-guided and
-contrastive acquisition criteria, \citet{bharti2024optimizing} optimise designs through an
-amortized posterior, \citet{zaballa2025bridging} bridge sequential design and SBI, and
-\citet{vanlier2014bayesian} is an earlier instance of the same idea for systems-biology
-ODEs, sequentially selecting informative conditions by active learning. These methods share
-PACE's use of the current posterior, which is what frees them from the $\log(L+1)$ ceiling
-that the prior-contrastive objective imposes on the policy family.
+\citet{iollo2024pasoa} and \citet{iollo2025contrastive} develop posterior-guided and
+contrastive acquisition criteria, \citet{zaballa2025bridging} bridge sequential design and
+SBI by optimising designs through an amortized inference model, and
+\citet{pauwels2014bayesian} give an earlier instance of the same idea for systems-biology
+ODEs, sequentially selecting informative conditions by active learning. The closest method
+to PACE is \citet{klein2026supercharging}, who build several EIG estimators on modern SBI
+density estimators and optimise them by multiple-restart gradient ascent through the
+simulator, unifying inference and design. These methods share PACE's use of the current
+posterior, which frees them from the $\log(L+1)$ ceiling that the prior-contrastive
+objective imposes on the policy family.
 
 Until recently this family was found to be the weaker option. The review of
 \citet{rainforth2024modern} advocates amortized policies on both deployment speed and design
@@ -246,8 +253,8 @@ the adjoint and the saturating objective.
 The amortized policy family casts sequential design as a single trajectory objective and
 trains a network to optimise it, but that objective is a prior-contrastive bound with a
 $\log(L+1)$ ceiling, so its training signal vanishes on high-information systems, and the
-reinforcement-learning variants that avoid simulator gradients still inherit the saturated
-reward. The per-trajectory family avoids the ceiling by using the current posterior, but it
+reinforcement-learning variants that train on the same bound inherit its saturation. The
+per-trajectory family avoids the ceiling by using the current posterior, but it
 pays for simulator gradients that stiff systems do not provide reliably, or it retrains a
 proposal at every step. Simulation-based inference supplies the posterior estimator that
 PACE reuses, but its own theory says the importance weights must degrade as the posterior
