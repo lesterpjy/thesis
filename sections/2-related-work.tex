@@ -119,6 +119,7 @@ precise and derive further.
 \section{Reinforcement-learning approaches}
 \label{sec:rw-rl}
 
+
 A distinct line of research trains the design policy by reinforcement learning, casting
 sequential design as a Markov decision process in which the state is the history, the action
 is the next design, and the reward is an information measure. \citet{blau2022optimizing}
@@ -143,6 +144,7 @@ posterior. The qualification is that its reward is tight only when the learned p
 accurate, which is itself hard on stiff, high-dimensional systems, and vsOED has been shown
 on non-stiff benchmarks such as source location rather than the stiff ODEs studied here. We
 do not compare against it, which is a limitation of our evaluation.
+
 
 \section{Per-trajectory and posterior-guided design}
 \label{sec:rw-pertraj}
@@ -231,6 +233,7 @@ by their misclassification error and showing that optimal designs outperform equ
 
 \section{Stiff dynamical systems: inference, identifiability, and design}
 \label{sec:rw-stiff}
+
 
 Gradient-based design optimisation and policy training by the sPCE objective both differentiate
 through the ODE solver, and on stiff systems this differentiation is the dominant cost and a
