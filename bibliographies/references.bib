@@ -220,7 +220,7 @@
 
 @article{raue2009identifiability,
   title={Structural and practical identifiability analysis of partially observed dynamical models by exploiting the profile likelihood},
-  author={Raue, Andreas and Kreutz, Clemens and Maiwald, Thomas and others},
+  author={Raue, Andreas and Kreutz, Clemens and Maiwald, Thomas and Bachmann, Julie and Schilling, Marcel and Klingm{\"u}ller, Ursula and Timmer, Jens},
   journal={Bioinformatics},
   volume={25},
   number={15},
@@ -707,11 +707,11 @@
 }
 
 @inproceedings{iollo2025contrastive,
-  title={Contrastive Diffusions for Bayesian Optimal Experimental Design},
-  author={Iollo, Jacopo and others},
+  title={{B}ayesian Experimental Design via Contrastive Diffusions},
+  author={Iollo, Jacopo and Heinkel{\'e}, Christophe and Alliez, Pierre and Forbes, Florence},
   booktitle={International Conference on Learning Representations (ICLR)},
   year={2025},
-  note={TODO: verify full author list and venue}
+  note={arXiv:2410.11826}
 }
 
 @article{monod1949growth,
@@ -738,9 +738,9 @@
   publisher={Springer}
 }
 
-@article{kim2024stiff,
+@article{fronk2024stiff,
   title={Training Stiff Neural Ordinary Differential Equations with Implicit Single-Step Methods},
-  author={Kim, Colby Fronk and Petzold, Linda},
+  author={Fronk, Colby and Petzold, Linda},
   journal={arXiv preprint arXiv:2410.05592},
   year={2024}
 }
@@ -817,15 +817,15 @@
 }
 
 @article{caldana2025neural,
-  title={Neural {ODEs} for Model Order Reduction of Stiff Systems},
-  author={Caldana, Matteo and Antonietti, Paola F. and Dede', Luca},
+  title={Neural Ordinary Differential Equations for Model Order Reduction of Stiff Systems},
+  author={Caldana, Matteo and Hesthaven, Jan S.},
   journal={International Journal for Numerical Methods in Engineering},
   publisher={Wiley},
   year={2025},
   doi={10.1002/nme.70060}
 }
 
-@phdthesis{pal2023neural,
+@mastersthesis{pal2023neural,
   title={On Efficient Training and Inference of Neural Differential Equations},
   author={Pal, Avik},
   school={Massachusetts Institute of Technology},
@@ -834,7 +834,7 @@
 
 @inproceedings{aaai2025semiimplicit,
   title={Semi-Implicit Neural Ordinary Differential Equations},
-  author={Liang, Hong-Lin and Yu, Yi-Cheng and Tang, Wei-Shi and Yu, Hao-Tian and Bian, Yong-Bo},
+  author={Zhang, Hong and Liu, Ying and Maulik, Romit},
   booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
   year={2025}
 }
@@ -997,16 +997,16 @@
   year={2020}
 }
 
-@article{kidger2024efficient,
+@article{mccallum2024efficient,
   title={Efficient, accurate and stable gradients for neural ordinary differential equations},
-  author={Kidger, Patrick and others},
+  author={McCallum, Sam and Foster, James},
   journal={arXiv preprint arXiv:2410.11648},
   year={2024}
 }
 
-@article{linot2025vanishing,
+@article{fronk2025vanishing,
   title={The vanishing gradient problem for stiff neural differential equations},
-  author={Linot, Alec J. and others},
+  author={Fronk, Colby and Petzold, Linda},
   journal={arXiv preprint arXiv:2508.01519},
   year={2025}
 }
@@ -1019,19 +1019,12 @@
   year={2025}
 }
 
-@inproceedings{iollo2025posterior,
-  title={Posterior-aware {B}ayesian experimental design},
-  author={Iollo, Jacopo and Heinonen, Markus and Kaski, Samuel},
-  booktitle={International Conference on Learning Representations (ICLR)},
-  year={2025},
-  note={arXiv:2410.11826}
-}
-
-@article{bharti2024optimizing,
-  title={Optimizing likelihoods via mutual information: Bridging simulation-based inference and {B}ayesian optimal experimental design},
-  author={Bharti, Ayush and others},
-  journal={arXiv preprint arXiv:2502.08004},
-  year={2024}
+@inproceedings{iollo2024pasoa,
+  title={{PASOA} -- {PA}rticle ba{S}ed {B}ayesian {O}ptimal {A}daptive design},
+  author={Iollo, Jacopo and Heinkel{\'e}, Christophe and Alliez, Pierre and Forbes, Florence},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2024},
+  note={arXiv:2402.07160}
 }
 
 @article{hashemi2025media,
@@ -1181,9 +1174,9 @@
   year={2023}
 }
 
-@article{vanlier2014bayesian,
+@article{pauwels2014bayesian,
   title={A {B}ayesian active learning strategy for sequential experimental design in systems biology},
-  author={Vanlier, Joep and Tiemann, Christian A and Hilbers, Peter AJ and van Riel, Natal AW},
+  author={Pauwels, Edouard and Lajaunie, Christophe and Vert, Jean-Philippe},
   journal={BMC Systems Biology},
   volume={8},
   pages={102},
@@ -1272,4 +1265,113 @@
   number={4},
   pages={887--905},
   year={2010}
+}
+
+% ============================================================================
+% Classical optimal experimental design
+% ============================================================================
+
+@article{smith1918standard,
+  title={On the standard deviations of adjusted and interpolated values of an observed polynomial function and its constants and the guidance they give towards a proper choice of the distribution of observations},
+  author={Smith, Kirstine},
+  journal={Biometrika},
+  volume={12},
+  number={1--2},
+  pages={1--85},
+  year={1918}
+}
+
+@article{wald1943efficient,
+  title={On the efficient design of statistical investigations},
+  author={Wald, Abraham},
+  journal={The Annals of Mathematical Statistics},
+  volume={14},
+  number={2},
+  pages={134--140},
+  year={1943}
+}
+
+@article{kiefer1959optimum,
+  title={Optimum experimental designs},
+  author={Kiefer, Jack},
+  journal={Journal of the Royal Statistical Society, Series B (Methodological)},
+  volume={21},
+  number={2},
+  pages={272--304},
+  year={1959}
+}
+
+@article{kiefer1960equivalence,
+  title={The equivalence of two extremum problems},
+  author={Kiefer, Jack and Wolfowitz, Jacob},
+  journal={Canadian Journal of Mathematics},
+  volume={12},
+  pages={363--366},
+  year={1960}
+}
+
+@book{fedorov1972theory,
+  title={Theory of Optimal Experiments},
+  author={Fedorov, Valerii V},
+  publisher={Academic Press},
+  address={New York},
+  year={1972}
+}
+
+@book{atkinson1992optimum,
+  title={Optimum Experimental Designs},
+  author={Atkinson, Anthony C and Donev, Alexander N},
+  publisher={Oxford University Press},
+  address={Oxford},
+  year={1992}
+}
+
+@article{chernoff1953locally,
+  title={Locally optimal designs for estimating parameters},
+  author={Chernoff, Herman},
+  journal={The Annals of Mathematical Statistics},
+  volume={24},
+  number={4},
+  pages={586--602},
+  year={1953}
+}
+
+@article{box1959design,
+  title={Design of experiments in non-linear situations},
+  author={Box, George E P and Lucas, H L},
+  journal={Biometrika},
+  volume={46},
+  number={1--2},
+  pages={77--90},
+  year={1959}
+}
+
+@article{atkinson1975discriminating2,
+  title={The design of experiments for discriminating between two rival models},
+  author={Atkinson, Anthony C and Fedorov, Valerii V},
+  journal={Biometrika},
+  volume={62},
+  number={1},
+  pages={57--70},
+  year={1975}
+}
+
+@article{box1967discrimination,
+  title={Discrimination among mechanistic models},
+  author={Box, George E P and Hill, William J},
+  journal={Technometrics},
+  volume={9},
+  number={1},
+  pages={57--71},
+  year={1967}
+}
+
+@article{hunter1965designs,
+  title={Designs for discriminating between two rival models},
+  author={Hunter, William G and Reiner, Albey M},
+  journal={Technometrics},
+  volume={7},
+  number={3},
+  pages={307--323},
+  year={1965}
 }

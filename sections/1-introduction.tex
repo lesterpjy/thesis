@@ -61,7 +61,7 @@ Differentiating through an implicit solver by the adjoint method~\citep{chen2018
 large compilation overhead, is numerically delicate, and is prone to vanishing or exploding
 gradients on stiff dynamics, difficulties that have driven a dedicated line of work on
 differentiable and reversible stiff
-solvers~\citep{kim2024stiff,pal2023neural,kidger2024efficient,caldana2025neural,linot2025vanishing}.
+solvers~\citep{fronk2024stiff,pal2023neural,mccallum2024efficient,caldana2025neural,fronk2025vanishing}.
 For experimental design this penalty is paid twice over: the inner Monte Carlo loop is slow
 because each of its many likelihood evaluations is an implicit solve, and any gradient-based
 design optimisation or policy training is fragile because those gradients pass through the same
@@ -141,7 +141,7 @@ policy, though the demonstration is narrow: it uses hundreds of optimisation res
 low-dimensional benchmarks, and its own results show the advantage concentrated in the lowest
 dimension and shrinking as the dimension grows. It also needs gradients through the simulator, and
 on stiff ODE systems those gradients are expensive, numerically delicate, or
-unavailable~\citep{kim2024stiff,pal2023neural}. The promise of per-trajectory design is real, but
+unavailable~\citep{fronk2024stiff,pal2023neural}. The promise of per-trajectory design is real, but
 so far it holds only on small, differentiable problems and at high cost.
 
 The gap is a per-trajectory method that needs neither a trained policy nor simulator gradients: it

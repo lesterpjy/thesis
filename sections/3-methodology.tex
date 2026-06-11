@@ -95,8 +95,8 @@ as the single quantity in Eq.~\eqref{eq:traj-mi} is what lets a policy be traine
 end to end by gradient ascent, sidestepping the dynamic-programming look-ahead that a
 greedy rule ignores. The same objective is used by implicit DAD for likelihood-free
 models~\citep{ivanova2021implicit}, by Step-DAD which refines the policy at
-deployment~\citep{hedman2025stepdad}, by reinforcement-learning and value-based
-variants~\citep{blau2022optimizing,belliardo2024modelaware}, by amortized variants
+deployment~\citep{hedman2025stepdad}, by a reinforcement-learning and value-based
+variant~\citep{blau2022optimizing}, by amortized variants
 such as vsOED and ALINE~\citep{shen2025vsoed,huang2024amortized,huang2025aline,bracher2025jadai},
 and by ODE-specific specialisations~\citep{strouwen2026deep,foster2020unified}. The
 obstacle, shared by all of them, is that the trajectory marginal
@@ -695,9 +695,10 @@ sample size is high, $\bar\Phi$ is a well-resolved weighted average and PACE
 approximates the EIG with $O(1/J)$ bias. As the weights concentrate, $\bar\Phi$
 deforms continuously into the single-particle form, with no threshold and no mode
 switch. In that limit, if one competitor $\theta_{k^\ast}$ dominates the rest, the
-criterion becomes a pairwise log likelihood-ratio test, and its expectation over the
-generated $y_{t,\mathrm{dom}}$ is the Kullback-Leibler divergence between the two
-predictive distributions,
+criterion becomes a pairwise log likelihood-ratio test~\citep{wald1945sequential}, the
+sequential-analysis object used for Bayesian adaptive model discrimination by
+\citet{cavagnaro2010adaptive}; its expectation over the generated $y_{t,\mathrm{dom}}$ is
+the Kullback-Leibler divergence between the two predictive distributions,
 \begin{equation}
 \label{eq:kl}
 \mathbb{E}_{y_{t,\mathrm{dom}}}\!\left[\log\frac{p(y_{t,\mathrm{dom}}\mid\theta_{\mathrm{dom}},\xi_t)}{p(y_{t,\mathrm{dom}}\mid\theta_{k^\ast},\xi_t)}\right]
@@ -746,7 +747,7 @@ differentiates the sPCE objective with respect to the design, and therefore thro
 the simulator, by an adjoint pass. Each training iteration simulates $L$ contrastive
 trajectories of $T$ steps forward and then backpropagates through all $L\cdot T$
 solves. On stiff systems the backward pass is substantially more expensive than the
-forward pass and carries a large fixed adjoint-compilation overhead~\citep{kim2024stiff,pal2023neural,caldana2025neural}.
+forward pass and carries a large fixed adjoint-compilation overhead~\citep{fronk2024stiff,pal2023neural,caldana2025neural}.
 Moreover, on saturated systems $L$ must reach $L_{\mathrm{escape},50}$ before the
 gradient carries any signal at all (Section~\ref{sec:m-saturation}), so the total
 training cost is $O(N_{\mathrm{iter}}\cdot L_{\mathrm{escape},50}\cdot T)$
