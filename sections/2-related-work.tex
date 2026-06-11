@@ -8,9 +8,9 @@ of stiff differential equations. In addition to introducing related works, this 
 estimators that policy methods train on, including the learned-proposal bounds PACE most
 resembles (Section~\ref{sec:rw-policy}), the reinforcement-learning variants that share
 their reward (Section~\ref{sec:rw-rl}), and the per-trajectory family that, like PACE,
-uses the current posterior (Section~\ref{sec:rw-pertraj}). Two shorter sections cover the
-classical Fisher-information designs that reappear inside PACE
-(Section~\ref{sec:rw-classical}) and the cost of differentiating through stiff simulators
+uses the current posterior (Section~\ref{sec:rw-pertraj}). Two shorter sections cover the classical optimal-design criteria for ODE models and
+model discrimination (Section~\ref{sec:rw-classical}) and the cost of differentiating
+through stiff simulators
 (Section~\ref{sec:rw-stiff}). The chapter closes by stating the gap PACE fills
 (Section~\ref{sec:rw-gap}).
 
@@ -180,7 +180,7 @@ performance is higher than earlier work had found. Two costs, however, keep the 
 the obvious choice on the systems of this thesis. First, the leading methods, Klein's included,
 select designs with gradients taken through the simulator, which on stiff ODE solvers needs an
 adjoint pass that is expensive, numerically delicate, or
-unavailable~\citep{klein2026supercharging,kim2024stiff,pal2023neural}. Second, several of them
+unavailable~\citep{klein2026supercharging,fronk2024stiff,pal2023neural}. Second, several of them
 retrain or update the posterior at every step, paying a per-step inference cost that amortized
 policies avoid. The result is a regime that falls between the two families: on stiff,
 high-information systems, policy training loses its signal to saturation while gradient-based
@@ -195,57 +195,81 @@ gradient.
 \section{Classical optimal design for ODE models and model discrimination}
 \label{sec:rw-classical}
 
-Before amortization, optimal design for ODE models was dominated by local criteria based on
-the Fisher information matrix, such as D-optimality, and by methods for discriminating
-between competing models. \citet{huan2014simulation} developed simulation-based optimal
-design for nonlinear systems. \citet{flassig2012optimal} designed optimal stimulus
-experiments to discriminate between biochemical ODE models using the overlap of their
-predictive distributions, \citet{hainy2022optimal} cast model discrimination as a
-classification problem and compared optimal against equidistant designs, and
-\citet{braniff2022nloed} provide a software package for nonlinear optimal design in systems
-biology using the Jensen-Shannon divergence between predictive densities. These criteria
-reappear inside PACE: the collapsed-weight limit of the PACE score reduces to a
-Fisher-information criterion (Chapter~\ref{sec:methodology}), which connects the method to
-this classical line even though it is derived from a contrastive estimator. In that same
-limit the criterion becomes a likelihood-ratio test between two parameter hypotheses, the
-sequential-analysis object introduced by \citet{wald1945sequential} and used for Bayesian
-adaptive model discrimination by \citet{cavagnaro2010adaptive}; PACE recovers this
-discriminative criterion automatically as the effective sample size collapses, rather than
-by design.
+Optimal experimental design has a long history that predates amortization. Classical theory
+selects the design that optimises a scalar functional of the Fisher information matrix,
+controlling the variance of the resulting parameter estimates. \citet{smith1918standard}
+gave the earliest construction, deriving designs that minimise the maximum prediction
+variance for polynomial regression. The determinant criterion, which maximises $\det F$ to
+shrink the volume of the confidence ellipsoid, was proposed by \citet{wald1943efficient}; it
+is now known as D-optimality, and \citet{kiefer1960equivalence} proved its equivalence to
+G-optimality, which minimises the worst-case prediction variance. The remaining alphabetic
+criteria optimise other functionals of $F$, with A-optimality minimising the average parameter
+variance and E-optimality the worst-conditioned direction. \citet{kiefer1959optimum} developed the general theory of approximate designs that
+unifies these criteria, and \citet{fedorov1972theory} and \citet{atkinson1992optimum} provide
+the exchange algorithms and the standard textbook treatment.
+
+For the nonlinear models studied in this thesis, the Fisher information depends on the unknown
+parameters, so a design can be optimal only locally, at an assumed parameter value.
+\citet{chernoff1953locally} introduced this notion of local optimality, and
+\citet{box1959design} derived D-optimal designs for nonlinear mechanistic models,
+the setting closest to biochemical ODEs. This dependence on the unknown parameters is the
+central difficulty: a design that is optimal at one parameter value may be poor at another,
+which motivates the Bayesian and sequential treatments that average or update over parameter
+uncertainty. \citet{huan2014simulation} extended optimal design to nonlinear systems through
+simulation, and \citet{braniff2022nloed} provide NLoed, a Python package that constructs such
+designs from the expected Fisher information matrix for systems-biology models.
+
+When the goal is to choose between competing models rather than to estimate parameters, the
+design criterion changes. \citet{hunter1965designs} proposed selecting the experiment at which
+two rival models disagree most, and \citet{box1967discrimination} gave a Bayesian sequential
+criterion based on the model posterior. \citet{atkinson1975discriminating2} formalised this
+line as T-optimality, which maximises the lack of fit of the inferior model. In systems
+biology, \citet{flassig2012optimal} designed optimal stimulus experiments that separate
+competing biochemical ODE models by the overlap of their predictive distributions, and
+\citet{hainy2022optimal} recast discrimination as a classification problem, selecting designs
+by their misclassification error and showing that optimal designs outperform equidistant ones.
 
 \section{Stiff dynamical systems: inference, identifiability, and design}
 \label{sec:rw-stiff}
 
-Gradient-based design optimisation, and policy training by the sPCE objective, both
-differentiate through the ODE solver. On stiff systems this is the dominant cost and a
-source of instability. The adjoint method incurs a large compilation overhead and can be
-numerically delicate, which has motivated dedicated discretise-then-optimise and
-reversible-solver constructions~\citep{kim2024stiff,caldana2025neural,pal2023neural,kidger2024efficient},
-and vanishing-gradient pathologies are documented for stiff
-dynamics~\citep{linot2025vanishing}. This literature is the practical motivation for the
-forward-only optimiser in PACE: by scoring designs with forward simulations only, PACE
-avoids the adjoint entirely and applies to stiff and black-box simulators where
-gradient-based design is unstable or infeasible. It is also what separates PACE from the
-gradient-based per-trajectory methods of Section~\ref{sec:rw-pertraj}, which share its use
-of the posterior but not its avoidance of the adjoint.
+Gradient-based design optimisation and policy training by the sPCE objective both differentiate
+through the ODE solver, and on stiff systems this differentiation is the dominant cost and a
+source of instability. A system is stiff when its solution combines processes on widely separated
+timescales~\citep{curtiss1952integration}; explicit solvers must then take very small steps to
+stay stable even where the trajectory is smooth, so stiff models are integrated instead with
+implicit solvers that solve a nonlinear system at every step~\citep{hairer1996solving}. Gradients
+through such a solver are obtained in one of two ways. The continuous adjoint method solves an
+auxiliary system backward in time and recovers the gradient at a memory cost independent of the
+number of steps~\citep{chen2018neural}, whereas the discrete adjoint, or discretise-then-optimise,
+differentiates the solver's own operations and returns the exact gradient of the discretised
+solution at the cost of storing the forward pass.
 
-The difficulties this thesis confronts are individually familiar in the modelling of dynamical
-biochemical systems, and each has been addressed on its own terms. Stiffness and disparate
-timescales are the rule rather than the exception in these models, as the standard benchmark
-collections of intracellular-process models document~\citep{hass2019benchmark}, and the
-practical and structural non-identifiability of their parameters, the source of the broad prior,
-has been studied at
-length~\citep{villaverde2016structural,raue2009identifiability,gutenkunst2007universally}. The
-cost of stiff solvers has likewise been met head-on for the \emph{inference} problem: large
-biochemical models are routinely fitted by adjoint sensitivity analysis, which scales
-gradient-based parameter estimation to hundreds of states and
-parameters~\citep{froehlich2017scalable}. What that body of work addresses, however, is
-estimating parameters from data already collected, not designing the experiments that produce
-the data. Carrying the same adjoint machinery into sequential design meets the saturation
-obstacle of Section~\ref{sec:rw-policy}, which no advance in solver technology removes, because
-it is a property of the prior-contrastive objective and not of the solver. This is the gap PACE
-addresses: it keeps the forward simulator that a stiff model can always provide, and avoids both
-the adjoint and the saturating objective.
+Stiffness makes both routes fragile. The adjoint system of a stiff forward problem is itself
+stiff, so it must again be solved implicitly and is numerically delicate, and the sensitivities to
+fast-decaying modes shrink towards zero, a vanishing-gradient pathology that
+\citet{fronk2025vanishing} show is intrinsic to stiff neural differential equations and affects
+every A-stable scheme. These difficulties have driven a dedicated line of work on differentiable
+stiff solvers: implicit single-step methods for training stiff neural ODEs~\citep{fronk2024stiff},
+semi-implicit schemes~\citep{aaai2025semiimplicit}, algebraically reversible solvers that recover
+the backward pass without storing the forward trajectory~\citep{mccallum2024efficient}, learned
+time-reparametrisations that map a stiff system onto a non-stiff one~\citep{caldana2025neural}, and
+efficient discrete-adjoint implementations~\citep{pal2023neural}.
+
+These difficulties are individually familiar in the modelling of dynamical biochemical systems,
+which the standard benchmark suites collect and standardise~\citep{hass2019benchmark}. Stiffness is
+the rule rather than the exception in these models~\citep{stadter2021benchmarking}, where rate
+constants routinely span several orders of magnitude, and their parameters are frequently
+non-identifiable, whether structurally~\citep{villaverde2016structural} or only in
+practice~\citep{raue2009identifiability}; the resulting sloppiness, in which most parameter
+combinations are only loosely constrained~\citep{gutenkunst2007universally}, is the source of the
+broad priors used here. For the \emph{inference} problem the cost of stiff solvers has been met
+head-on: large biochemical models are routinely fitted by adjoint sensitivity analysis, which
+makes the gradient cost effectively independent of the number of parameters and scales estimation
+to models with hundreds of states and parameters~\citep{froehlich2017scalable}. That work,
+however, estimates parameters from data already collected, not the experiments that produce the
+data. Carrying the same adjoint machinery into sequential design meets the saturation obstacle of
+Section~\ref{sec:rw-policy}, which no advance in solver technology removes, because it is a
+property of the prior-contrastive objective and not of the solver.
 
 \section{Summary and the gap}
 \label{sec:rw-gap}
