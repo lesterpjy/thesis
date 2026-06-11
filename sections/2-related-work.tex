@@ -250,8 +250,7 @@ solution at the cost of storing the forward pass.
 Stiffness makes both routes fragile. The adjoint system of a stiff forward problem is itself
 stiff, so it must again be solved implicitly and is numerically delicate, and the sensitivities to
 fast-decaying modes shrink towards zero, a vanishing-gradient pathology that
-\citet{fronk2025vanishing} show is intrinsic to stiff neural differential equations and affects
-every A-stable scheme. These difficulties have driven a dedicated line of work on differentiable
+\citet{fronk2025vanishing} show is intrinsic to stiff neural differential equations and affects every A-stable scheme. These difficulties have driven a dedicated line of work on differentiable
 stiff solvers: implicit single-step methods for training stiff neural ODEs~\citep{fronk2024stiff},
 semi-implicit schemes~\citep{aaai2025semiimplicit}, algebraically reversible solvers that recover
 the backward pass without storing the forward trajectory~\citep{mccallum2024efficient}, learned
@@ -270,9 +269,7 @@ head-on: large biochemical models are routinely fitted by adjoint sensitivity an
 makes the gradient cost effectively independent of the number of parameters and scales estimation
 to models with hundreds of states and parameters~\citep{froehlich2017scalable}. That work,
 however, estimates parameters from data already collected, not the experiments that produce the
-data. Carrying the same adjoint machinery into sequential design meets the saturation obstacle of
-Section~\ref{sec:rw-policy}, which no advance in solver technology removes, because it is a
-property of the prior-contrastive objective and not of the solver.
+data. Carrying the same adjoint machinery into sequential design meets the saturation obstacle of Section~\ref{sec:rw-policy}, which no advance in solver technology removes, because it is a property of the prior-contrastive objective and not of the solver.
 
 \section{Summary and the gap}
 \label{sec:rw-gap}
